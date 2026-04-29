@@ -1,4 +1,4 @@
-let _kawarp = null;
+let _dybg = null;
 let _resizeHandler = null;
 let _frameId = null;
 let _videoUpdateTimer = null;
@@ -81,65 +81,89 @@ function darkenColor(rgb, amount) {
  * @param {HTMLElement|string} img - The image/video element or URL
  */
 export async function applyLegacyBackground(bgContainer, img) {
-  const { default: Kawarp } = await import(
-    "https://nurislamaibekuly.github.io/kawarp-js/kawarp.js"
+  const { default: Dybg } = await import(
+    "https://nurislamaibekuly.github.io/dybg/dybg.js"
   );
 
   stopKawarp();
 
   if (_resizeHandler) {
-    window.removeEventListener('resize', _resizeHandler);
+    window.removeEventListener("resize", _resizeHandler);
     _resizeHandler = null;
   }
 
-  bgContainer.innerHTML = '';
-  bgContainer.className = 'spicy-dynamic-bg KawarpBackground';
+  if (_videoUpdateTimer) {
+    clearTimeout(_videoUpdateTimer);
+    _videoUpdateTimer = null;
+  }
 
-  const canvas = document.createElement('canvas');
+  bgContainer.innerHTML = "";
+  bgContainer.className = "spicy-dynamic-bg DybgBackground";
+
+  const canvas = document.createElement("canvas");
+  canvas.style.width = "100%";
+  canvas.style.height = "100%";
+  canvas.style.filter = "brightness(0.55) saturate(1.3)";
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   bgContainer.appendChild(canvas);
 
-  _kawarp = new Kawarp(canvas, {
-    warpIntensity: 0.6,
-    blurPasses: 6,
-    animationSpeed: 1.0,
-  });
+  _dybg = new Dybg(canvas);
+  _dybg.BLUR_PASSES = 6;
 
-  // Initial load
-  if (img instanceof HTMLVideoElement) {
-    // For video, we first draw one frame to get it started
-    _sourceCtx.drawImage(img, 0, 0, _sourceCanvas.width, _sourceCanvas.height);
-    await _kawarp.loadImage(_sourceCanvas.toDataURL('image/webp', 0.1));
-  } else {
-    await _kawarp.loadImage(img);
-  }
-  
-  _kawarp.start();
+  const loadSource = () => {
+    if (img instanceof HTMLVideoElement) {
+      _sourceCanvas.width = img.videoWidth || 512;
+      _sourceCanvas.height = img.videoHeight || 512;
+      _sourceCtx.drawImage(
+        img,
+        0,
+        0,
+        _sourceCanvas.width,
+        _sourceCanvas.height
+      );
+      _dybg.loadImage(_sourceCanvas);
+    } else if (typeof img === 'string') {
+      const imageEl = new Image();
+      imageEl.crossOrigin = "anonymous";
+      imageEl.onload = () => {
+        if (_dybg) _dybg.loadImage(imageEl);
+      };
+      imageEl.src = img;
+    } else {
+      _dybg.loadImage(img);
+    }
+  };
 
-  // If source is a video, update the frame periodically (10 FPS)
+  loadSource();
+
   if (img instanceof HTMLVideoElement) {
     const updateFrame = () => {
-      if (!_kawarp) return;
-      _sourceCtx.drawImage(img, 0, 0, _sourceCanvas.width, _sourceCanvas.height);
-      // Use async toBlob instead of blocking the main thread with toDataURL
-      _sourceCanvas.toBlob(async (blob) => {
-        if (!_kawarp) return;
-        const url = URL.createObjectURL(blob);
-        await _kawarp.loadImage(url);
-        URL.revokeObjectURL(url);
-        _videoUpdateTimer = setTimeout(updateFrame, 100);
-      }, 'image/webp', 0.1);
+      if (!_dybg) return;
+
+      _sourceCtx.drawImage(
+        img,
+        0,
+        0,
+        _sourceCanvas.width,
+        _sourceCanvas.height
+      );
+
+      _dybg.loadImage(_sourceCanvas);
+
+      _videoUpdateTimer = setTimeout(updateFrame, 100);
     };
+
     _videoUpdateTimer = setTimeout(updateFrame, 100);
   }
 
   _resizeHandler = () => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    _kawarp?.resize?.();
+    _dybg?.resize?.();
   };
-  window.addEventListener('resize', _resizeHandler);
+
+  window.addEventListener("resize", _resizeHandler);
 }
 
 export function stopKawarp() {
@@ -151,8 +175,8 @@ export function stopKawarp() {
     cancelAnimationFrame(_frameId);
     _frameId = null;
   }
-  _kawarp?.stop?.();
-  _kawarp = null;
+  _dybg?.stop?.();
+  _dybg = null;
 }
 
 /**
