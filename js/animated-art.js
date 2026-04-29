@@ -17,7 +17,7 @@ async function searchiTunes(query) {
   try {
     const encoded = encodeURIComponent(query);
     // Use Spicy AMLL Server as a proxy for iTunes search to avoid CORS issues on Netlify
-    const res = await fetch(`https://yxqo41-spicyamllserver.hf.space/api/searcham?term=${encoded}&types=albums&limit=5`);
+    const res = await fetch(`https://api.spicyamll.online/api/searcham?term=${encoded}&types=albums&limit=5`);
     if (!res.ok) return null;
 
     const data = await res.json();

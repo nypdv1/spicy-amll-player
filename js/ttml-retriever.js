@@ -353,7 +353,7 @@ async function fetchFromAppleMusic(songName, artistName, albumName, trackId = nu
     console.log(`[TTMLRetriever] Apple Music: Using track ID ${trackId}, fetching TTML...`);
 
     // Use the proxy/api to get TTML
-    const apiRes = await proxiedFetch(`https://yxqo41-spicyamllserver.hf.space/api/getttmlam?song=${trackId}`, { skipProxy: true });
+    const apiRes = await proxiedFetch(`https://api.spicyamll.online/api/getttmlam?song=${trackId}`, { skipProxy: true });
     if (!apiRes.ok) return null;
 
     const data = await apiRes.json();

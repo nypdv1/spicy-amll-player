@@ -51,7 +51,7 @@ export const TTMLDownloader = {
 
     // 2. Fallback to Apple Music API
     try {
-      const url = `https://yxqo41-spicyamllserver.hf.space/api/getttmlam?song=${songId}`;
+      const url = `https://api.spicyamll.online/api/getttmlam?song=${songId}`;
       console.log(`[TTMLDownloader] 🔍 Checking Apple Music API: ${url}`);
       
       const res = await robustFetch(url, { skipProxy: true });

@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (format === 'm4a') {
       // Original M4A download
-      const url = `https://yxqo41-spicyamllserver.hf.space/api/downloadam?song=${songId}`;
+      const url = `https://api.spicyamll.online/api/downloadam?song=${songId}`;
       setStatus(`Starting direct M4A download for ${name || songId}...`);
       triggerDownload(url, `Song_${songId}.m4a`);
       setLoading(false);
@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // If it's not a pure number, maybe it's a search term
       if (!/^\d+$/.test(query)) {
         setStatus('Searching for tracks...');
-        const searchRes = await fetch(`https://yxqo41-spicyamllserver.hf.space/api/searcham?term=${encodeURIComponent(query)}&types=songs&limit=10`);
+        const searchRes = await fetch(`https://api.spicyamll.online/api/searcham?term=${encodeURIComponent(query)}&types=songs&limit=10`);
         if (!searchRes.ok) throw new Error('Search failed');
         const searchData = await searchRes.json();
 
