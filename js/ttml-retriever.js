@@ -9,12 +9,12 @@ const CUSTOM_LYRICS_API = 'https://yxqo41main-spicy-player-db.hf.space';
 /** Source label mapping */
 const SOURCE_LABELS = {
   spl: 'Spicy Lyrics Community',
+  lyricsplus: 'LyricsPlus',
   aml: 'Apple Music',
   spt: 'Spotify',
   spicy: 'Spicy AMLL Player',
   spotify: 'Spotify',
   lrclib: 'LRCLIB',
-  lyricsplus: 'LyricsPlus',
   netease: 'Netease',
   musixmatch: 'Musixmatch',
   genius: 'Genius',
