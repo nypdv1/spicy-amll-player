@@ -41,7 +41,7 @@ export const LYRICS_SOURCE_PROVIDER_DEFINITIONS = {
   }
 };
 
-export const DEFAULT_LYRICS_SOURCE_ORDER = ["lyricsplus", "apple", "musixmatch", "lrclib", "netease"];
+export const DEFAULT_LYRICS_SOURCE_ORDER = ["apple", "lyricsplus", "musixmatch", "lrclib", "netease"];
 
 
 
