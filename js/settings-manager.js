@@ -9,6 +9,11 @@ export const LYRICS_SOURCE_PROVIDER_DEFINITIONS = {
     description: "Our high-quality TTML repository.",
     id: "spicy"
   },
+  lyricsplus: {
+    label: "LyricsPlus",
+    description: "High-quality database with community support.",
+    id: "lyricsplus"
+  },
   apple: {
     label: "Apple Music",
     description: "Premium animated and time-synced lyrics.",
@@ -28,11 +33,6 @@ export const LYRICS_SOURCE_PROVIDER_DEFINITIONS = {
     label: "LRCLIB",
     description: "Simple, open-source synced lyrics community.",
     id: "lrclib"
-  },
-  lyricsplus: {
-    label: "LyricsPlus",
-    description: "High-quality database with community support.",
-    id: "lyricsplus"
   },
   genius: {
     label: "Genius",
