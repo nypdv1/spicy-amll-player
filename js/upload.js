@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const ctxViewAlbum = document.getElementById('ctx-view-album');
   const ctxViewArtist = document.getElementById('ctx-view-artist');
   const ctxFavorite = document.getElementById('ctx-favorite');
+  const ctxCopyId = document.getElementById('ctx-copy-id');
 
   const playlistModal = document.getElementById('playlist-select-modal');
   const playlistOptionsList = document.getElementById('playlist-options-list');
@@ -560,7 +561,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       const songsRes = await fetch(
-        "https://api.spicyamll.online/api/searcham?term=pop&types=songs&limit=15"
+        "https://api.spicyamll.online/search?term=pop&types=songs&limit=15"
       );
       if (!songsRes.ok) throw new Error(`holy shit ${songsRes.status}`);
       const songsData = await songsRes.json();
@@ -569,7 +570,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderListenNow(trendingCache);
 
       const albumsRes = await fetch(
-        "https://api.spicyamll.online/api/searcham?term=2024&types=albums&limit=6"
+        "https://api.spicyamll.online/search?term=2024&types=albums&limit=6"
       );
       if (!albumsRes.ok) throw new Error(`holy shit ${albumsRes.status}`);
       const albumsData = await albumsRes.json();
@@ -681,7 +682,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       // const data = await itunesFetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=25`);
-      const res = await fetch(`https://api.spicyamll.online/api/searcham?term=${encodeURIComponent(query)}&types=songs&limit=25`);
+      const res = await fetch(`https://api.spicyamll.online/search?term=${encodeURIComponent(query)}&types=songs&limit=25`);
       const data = await res.json();
       renderSearchResults(data.results?.songs?.data?.map(mapSearchAmToItunes) || []);
     } catch (err) {
@@ -741,7 +742,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       // 1. Fetch Audio Buffer from AMLL Server (Corrected URL)
-      const audioUrl = `https://api.spicyamll.online/api/downloadam?song=${song.trackId}`;
+      const audioUrl = `https://api.spicyamll.online/download?song=${song.trackId}`;
       const response = await robustFetch(audioUrl, { skipProxy: true });
       const audioBuffer = await response.arrayBuffer();
 
@@ -775,7 +776,7 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error("Remote load failed:", err);
       prepOverlay.classList.remove('active');
 
-      const serverUrl = `https://api.spicyamll.online/api/downloadam?song=${song.trackId}`;
+      const serverUrl = `https://api.spicyamll.online/download?song=${song.trackId}`;
       const msg = `Failed to load track. This often happens if the server is 'sleeping'.\n\nTry clicking OK, then opening this link once to wake it up:\n${serverUrl}\n\nError: ${err.message}`;
       alert(msg);
     }
@@ -789,7 +790,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     try {
       // Use search as a fallback if lookup isn't explicitly known
-      const res = await fetch(`https://api.spicyamll.online/api/searcham?term=${id}&types=songs&limit=1`);
+      const res = await fetch(`https://api.spicyamll.online/search?term=${id}&types=songs&limit=1`);
       if (!res.ok) throw new Error("Catalog server unreachable");
       const data = await res.json();
       
@@ -924,13 +925,28 @@ document.addEventListener('DOMContentLoaded', () => {
      alert('Added to Favorites!');
   };
 
+  ctxCopyId.onclick = () => {
+    if (contextMenuTrack) {
+      const id = contextMenuTrack.trackId || contextMenuTrack.id;
+      if (id) {
+        navigator.clipboard.writeText(id.toString())
+          .then(() => {
+            alert(`Song ID ${id} copied to clipboard!`);
+          })
+          .catch(err => {
+            console.error('Failed to copy: ', err);
+          });
+      }
+    }
+  };
+
   closePlaylistModal.onclick = () => playlistModal.classList.add('hidden');
 
   async function addToPlaylistProcess(pId, track) {
      prepOverlay.classList.add('active');
      prepStatus.textContent = "Saving to Playlist...";
      try {
-       const audioUrl = `https://api.spicyamll.online/api/downloadam?song=${track.trackId}`;
+       const audioUrl = `https://api.spicyamll.online/download?song=${track.trackId}`;
        const response = await robustFetch(audioUrl, { skipProxy: true });
        const audioBuffer = await response.arrayBuffer();
        
@@ -1069,7 +1085,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       // const data = await itunesFetch(`https://itunes.apple.com/lookup?id=${collectionId}&entity=song`);
-      const res = await fetch(`https://api.spicyamll.online/api/ituneslookup?id=${collectionId}&entity=song`);
+      const res = await fetch(`https://api.spicyamll.online/itunes/lookup?id=${collectionId}&entity=song`);
       const data = await res.json();
       const tracks = data.results.filter(r => r.wrapperType === 'track');
       
@@ -1115,11 +1131,11 @@ document.addEventListener('DOMContentLoaded', () => {
      try {
        // Search for artist top songs & albums
        // const data = await itunesFetch(`https://itunes.apple.com/search?term=${encodeURIComponent(artistName)}&entity=song&limit=4`);
-       const res = await fetch(`https://api.spicyamll.online/api/itunessearch?term=${encodeURIComponent(artistName)}&entity=song&limit=4`);
+       const res = await fetch(`https://api.spicyamll.online/itunes/search?term=${encodeURIComponent(artistName)}&entity=song&limit=4`);
        const data = await res.json();
        const songs = data.results;
 
-       const albRes = await fetch(`https://api.spicyamll.online/api/itunessearch?term=${encodeURIComponent(artistName)}&entity=album&limit=1`);
+       const albRes = await fetch(`https://api.spicyamll.online/itunes/search?term=${encodeURIComponent(artistName)}&entity=album&limit=1`);
        const albData = await albRes.json();
        const latestAlbum = albData.results[0];
 

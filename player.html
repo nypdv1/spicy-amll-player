@@ -481,6 +481,9 @@
           // Attach maker metadata for the credits renderer
           result.lyricsData.makerHandle = result.makerHandle;
           result.lyricsData.makerId = result.makerId;
+          result.lyricsData.makerDisplayName = result.makerDisplayName;
+          result.lyricsData.makerNickname = result.makerNickname;
+          result.lyricsData.makerAvatar = result.makerAvatar;
           
           parsedLyrics = cleanLyricsData(result.lyricsData);
           applyLyricsToUI(parsedLyrics);

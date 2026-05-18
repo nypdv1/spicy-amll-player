@@ -640,6 +640,14 @@ function renderCredits(data, container) {
   if (hasMaker) {
     const makerSection = document.createElement("div");
     makerSection.classList.add("MakerSection");
+    makerSection.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      text-align: center;
+    `;
 
     const communityHeader = document.createElement("div");
     communityHeader.classList.add("CreditNotice");
@@ -648,22 +656,208 @@ function renderCredits(data, container) {
 
     const makerCredits = document.createElement("div");
     makerCredits.classList.add("CreditLine", "TTMLMaker");
+    makerCredits.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      width: 100%;
+    `;
     
-    const label = document.createTextNode("Made and Uploaded by ");
-    const link = document.createElement("a");
-    link.href = `https://discord.com/users/${data.makerId}`;
-    link.target = "_blank";
-    link.classList.add("maker-link");
-    link.textContent = data.makerHandle;
-    
+    const label = document.createElement("span");
+    label.textContent = "Made and Uploaded by";
+    label.style.cssText = `
+      font-size: 0.85rem;
+      opacity: 0.6;
+      font-weight: 500;
+    `;
     makerCredits.appendChild(label);
-    makerCredits.appendChild(link);
+
+    const badgeContainer = document.createElement("a");
+    badgeContainer.href = `https://api.spicyamll.online/user/@${data.makerHandle}`;
+    badgeContainer.target = "_blank";
+    badgeContainer.classList.add("maker-link");
+    badgeContainer.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 8px 16px;
+      border-radius: 16px;
+      text-decoration: none;
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    `;
+    badgeContainer.addEventListener("mouseover", () => {
+      badgeContainer.style.background = "rgba(255, 255, 255, 0.1)";
+      badgeContainer.style.borderColor = "rgba(255, 255, 255, 0.2)";
+      badgeContainer.style.transform = "translateY(-1px)";
+    });
+    badgeContainer.addEventListener("mouseout", () => {
+      badgeContainer.style.background = "rgba(255, 255, 255, 0.05)";
+      badgeContainer.style.borderColor = "rgba(255, 255, 255, 0.1)";
+      badgeContainer.style.transform = "translateY(0)";
+    });
+    badgeContainer.addEventListener("click", (e) => {
+      e.preventDefault();
+      showUserProfileIframe(data.makerHandle);
+    });
+
+    // PFP
+    const avatar = document.createElement("img");
+    avatar.src = data.makerAvatar || "https://discord.com/assets/embed/avatars/0.png";
+    avatar.onerror = () => {
+      avatar.src = "https://cdn.discordapp.com/embed/avatars/0.png";
+    };
+    avatar.style.cssText = `
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    `;
+    badgeContainer.appendChild(avatar);
+
+    // Text container (Name + Username)
+    const textCol = document.createElement("div");
+    textCol.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+    `;
+
+    // Display Name
+    const nameEl = document.createElement("span");
+    nameEl.textContent = data.makerDisplayName || data.makerNickname || data.makerHandle;
+    nameEl.style.cssText = `
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #ffffff;
+    `;
+    textCol.appendChild(nameEl);
+
+    // Username (not the nickname) under the name in small text
+    const handleEl = document.createElement("span");
+    handleEl.textContent = `@${data.makerHandle}`;
+    handleEl.style.cssText = `
+      font-size: 0.75rem;
+      opacity: 0.5;
+      font-weight: 400;
+    `;
+    textCol.appendChild(handleEl);
+
+    badgeContainer.appendChild(textCol);
+    makerCredits.appendChild(badgeContainer);
     makerSection.appendChild(makerCredits);
     
     creditsContainer.appendChild(makerSection);
   }
 
   container.appendChild(creditsContainer);
+}
+
+function showUserProfileIframe(username) {
+  let existingModal = document.getElementById("spicy-profile-modal");
+  if (existingModal) existingModal.remove();
+
+  const modal = document.createElement("div");
+  modal.id = "spicy-profile-modal";
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 99999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  `;
+
+  const card = document.createElement("div");
+  card.style.cssText = `
+    position: relative;
+    width: 90%;
+    max-width: 500px;
+    height: 80vh;
+    background: #0f0f0f;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75);
+    transform: scale(0.9);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  `;
+
+  const closeBtn = document.createElement("button");
+  closeBtn.innerHTML = "&times;";
+  closeBtn.style.cssText = `
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    color: white;
+    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    z-index: 10;
+  `;
+  closeBtn.addEventListener("mouseover", () => {
+    closeBtn.style.background = "rgba(255, 255, 255, 0.3)";
+  });
+  closeBtn.addEventListener("mouseout", () => {
+    closeBtn.style.background = "rgba(255, 255, 255, 0.15)";
+  });
+  closeBtn.addEventListener("click", () => {
+    modal.style.opacity = "0";
+    card.style.transform = "scale(0.9)";
+    setTimeout(() => modal.remove(), 300);
+  });
+
+  const iframe = document.createElement("iframe");
+  iframe.src = `https://api.spicyamll.online/user/@${username}`;
+  iframe.style.cssText = `
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: transparent;
+  `;
+
+  card.appendChild(closeBtn);
+  card.appendChild(iframe);
+  modal.appendChild(card);
+  document.body.appendChild(modal);
+
+  requestAnimationFrame(() => {
+    modal.style.opacity = "1";
+    card.style.transform = "scale(1)";
+  });
+
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) {
+      modal.style.opacity = "0";
+      card.style.transform = "scale(0.9)";
+      setTimeout(() => modal.remove(), 300);
+    }
+  });
 }
 
 /**

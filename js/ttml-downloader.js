@@ -10,7 +10,7 @@ export const TTMLDownloader = {
       const url = `https://itunes.apple.com/lookup?id=${songId}`;
       const res = await robustFetch(url);
       if (!res.ok) throw new Error(`iTunes lookup failed: ${res.status}`);
-      
+
       const data = await res.json();
       if (data.results && data.results.length > 0) {
         const song = data.results[0];
@@ -36,13 +36,13 @@ export const TTMLDownloader = {
     // 1. Try Community DB First ( synced by users)
     try {
       console.log(`[TTMLDownloader] 🔍 Checking Community Database for: ${songId}`);
-      const communityUrl = `https://yxqo41main-spicy-player-db.hf.space/lyrics/${songId}`;
+      const communityUrl = `https://api.spicyamll.online/community/lyrics/${songId}`;
       const communityRes = await robustFetch(communityUrl);
       if (communityRes.ok) {
         const data = await communityRes.json();
         if (data && data.ttml) {
-           console.log('[TTMLDownloader] ✅ Found lyrics in Community Database');
-           return data.ttml;
+          console.log('[TTMLDownloader] ✅ Found lyrics in Community Database');
+          return data.ttml;
         }
       }
     } catch (err) {
@@ -51,18 +51,18 @@ export const TTMLDownloader = {
 
     // 2. Fallback to Apple Music API
     try {
-      const url = `https://api.spicyamll.online/api/getttmlam?song=${songId}`;
+      const url = `https://api.spicyamll.online/lyrics?song=${songId}`;
       console.log(`[TTMLDownloader] 🔍 Checking Apple Music API: ${url}`);
-      
+
       const res = await robustFetch(url, { skipProxy: true });
       if (!res.ok) throw new Error(`Server returned ${res.status}`);
-      
+
       const data = await res.json();
-      
+
       // Handle the various ways the AMLL server might return the TTML
       const ttmlLocalizations = data?.raw?.data?.[0]?.attributes?.ttmlLocalizations;
       const ttmlRaw = data?.raw?.data?.[0]?.attributes?.ttml;
-      
+
       let ttml = null;
       if (ttmlLocalizations) {
         // Prefer 'default' or English, otherwise just pick the first one
@@ -70,11 +70,11 @@ export const TTMLDownloader = {
       } else if (ttmlRaw) {
         ttml = ttmlRaw;
       }
-      
+
       if (!ttml) {
         throw new Error('No TTML formatted lyrics found for this track in any source.');
       }
-      
+
       console.log('[TTMLDownloader] ✅ Found lyrics in Apple Music API');
       return ttml;
     } catch (err) {

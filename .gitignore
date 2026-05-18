@@ -83,3 +83,6 @@ hf_upload_scratch.py
 deploy_temp
 output
 deploy_temp/PROMPTS
+discord_bot.py
+hf_upload_server2.py
+__pycache__

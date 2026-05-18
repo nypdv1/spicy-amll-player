@@ -4,7 +4,7 @@ import { robustFetch } from './network-utils.js';
 
 const SPICY_API_URL = 'https://api.spicylyrics.org';
 const SPICY_VERSION = '2.8.0';
-const CUSTOM_LYRICS_API = 'https://yxqo41main-spicy-player-db.hf.space';
+const CUSTOM_LYRICS_API = 'https://api.spicyamll.online/community';
 
 /** Source label mapping */
 const SOURCE_LABELS = {
@@ -57,7 +57,10 @@ async function fetchFromCustomAPI(songId) {
         source: 'custom',
         sourceDisplayName: data.sourceDisplayName || `Synced by ${data.makerHandle || 'Community'}`,
         makerHandle: data.makerHandle,
-        makerId: data.makerId
+        makerId: data.makerId,
+        makerDisplayName: data.makerDisplayName,
+        makerNickname: data.makerNickname,
+        makerAvatar: data.makerAvatar
       };
     }
   } catch (e) {
@@ -690,7 +693,7 @@ async function fetchFromAppleMusic(songName, artistName, albumName, trackId = nu
     console.log(`[TTMLRetriever] Apple Music: Using track ID ${trackId}, fetching TTML...`);
 
     // Use the proxy/api to get TTML
-    const apiRes = await proxiedFetch(`https://api.spicyamll.online/api/getttmlam?song=${trackId}`, { skipProxy: true });
+    const apiRes = await proxiedFetch(`https://api.spicyamll.online/lyrics?song=${trackId}`, { skipProxy: true });
     if (!apiRes.ok) return null;
 
     const data = await apiRes.json();
