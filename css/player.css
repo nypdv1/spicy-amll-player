@@ -753,7 +753,8 @@ body.is-rendering .playback-control.repeat {
   display: none !important;
 }
 
-body.is-rendering {
+body.is-rendering,
+body.is-rendering * {
   cursor: none !important;
 }
 
