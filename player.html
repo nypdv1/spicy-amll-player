@@ -114,8 +114,8 @@
       <div class="LyricsContainer" id="lyrics-container">
         <div class="LyricsContent" id="lyrics-content">
           <div class="LyricsNotice" id="lyrics-notice">
-            <div class="SlBounceLoader"></div>
-            <span class="notice-descriptor">Loading lyrics...</span>
+            <img src="icons/giphy.gif" id="lyrics-loader-gif" alt="Loading..." style="width: 80px; height: 80px; margin-bottom: 20px; object-fit: contain;">
+            <span class="notice-descriptor">Finding Lyrics</span>
           </div>
         </div>
       </div>
@@ -383,6 +383,8 @@
 
           if (track.ttml && track.ttml !== '__AUTO_FETCH__') {
             try {
+              showNotice('Loading Lyrics');
+              await new Promise(r => setTimeout(r, 300));
               parsedLyrics = parseTTMLToLyrics(track.ttml);
               applyLyricsToUI(parsedLyrics);
               if (sourceBadge) sourceBadge.textContent = "LYRICS: TTML";
@@ -473,11 +475,14 @@
     }
 
     async function autoFetchLyrics(metadata, amTrackId = null) {
-      showNotice('🔍 Searching for lyrics...');
+      showNotice('Finding Lyrics');
       try {
         const durationSec = player.duration / 1000 || 0;
         const result = await retrieveTTML(metadata.title, metadata.artist, metadata.album, durationSec, amTrackId);
         if (result && result.lyricsData) {
+          showNotice('Loading Lyrics');
+          await new Promise(resolve => setTimeout(resolve, 300));
+          
           // Attach maker metadata for the credits renderer
           result.lyricsData.makerHandle = result.makerHandle;
           result.lyricsData.makerId = result.makerId;
@@ -501,7 +506,7 @@
             }
           }
         } else {
-          showNotice('No lyrics found');
+          showNotice('No lyrics found.');
         }
       } catch (err) {
         console.error("Auto-fetch error:", err);
@@ -622,8 +627,24 @@
 
     function showNotice(text) {
       if (lyricsNotice) {
+        // Clear static/scrolled lyrics dynamic items
+        lyricsContent.innerHTML = '';
+        
+        // Re-append notice element to ensure it's in the DOM
+        lyricsContent.appendChild(lyricsNotice);
+        
         lyricsNotice.style.display = '';
         lyricsNotice.querySelector('.notice-descriptor').textContent = text;
+        
+        const loaderGif = document.getElementById('lyrics-loader-gif');
+        if (loaderGif) {
+          // Show the loader GIF for finding/loading/searching notices
+          if (text.includes('Finding') || text.includes('Loading') || text.includes('Searching')) {
+            loaderGif.style.display = 'block';
+          } else {
+            loaderGif.style.display = 'none';
+          }
+        }
       }
     }
 
