@@ -339,19 +339,54 @@ function animateSyllable(position, deltaTime) {
   const startIdx = Math.max(0, searchIdx - offsetSearch);
   const endIdx = Math.min(arr.length, searchIdx + offsetSearch + 5);
 
+  // First step all line-level staggered animations (with snapping for lines outside window)
+  if (isSimpleMode || isAML || isSwipe) {
+    for (let index = 0; index < arr.length; index++) {
+      const line = arr[index];
+      if (line.AnimatorStoreLine) {
+        let curY, curOp, curBlur;
+        if (index >= startIdx && index < endIdx) {
+          curY = line.AnimatorStoreLine.Y.Step(deltaTime);
+          curOp = line.AnimatorStoreLine.Opacity.Step(deltaTime);
+          curBlur = line.AnimatorStoreLine.Blur.Step(deltaTime);
+        } else {
+          // Snap instantly if outside active window to prevent stacking
+          curY = line.AnimatorStoreLine.Y.target;
+          line.AnimatorStoreLine.Y.position = curY;
+          line.AnimatorStoreLine.Y.velocity = 0;
+          
+          curOp = line.AnimatorStoreLine.Opacity.target;
+          line.AnimatorStoreLine.Opacity.position = curOp;
+          line.AnimatorStoreLine.Opacity.velocity = 0;
+          
+          curBlur = line.AnimatorStoreLine.Blur.target;
+          line.AnimatorStoreLine.Blur.position = curBlur;
+          line.AnimatorStoreLine.Blur.velocity = 0;
+        }
+
+        setStyleIfChanged(line.HTMLElement, "transform", `translate3d(0, ${curY.toFixed(2)}px, 0)`);
+        setStyleIfChanged(line.HTMLElement, "opacity", curOp.toFixed(3));
+        setStyleIfChanged(line.HTMLElement, "filter", curBlur > 0.1 ? `blur(${curBlur.toFixed(2)}px)` : 'none');
+      }
+    }
+  }
+
+  // Sync credits translation with the last line's translation to prevent overlap
+  const lastLine = arr[arr.length - 1];
+  if (lastLine) {
+    const creditsEl = lastLine.HTMLElement.parentElement?.querySelector(".Credits");
+    if (creditsEl) {
+      if ((isSimpleMode || isAML || isSwipe) && lastLine.AnimatorStoreLine) {
+        const curY = lastLine.AnimatorStoreLine.Y.position;
+        setStyleIfChanged(creditsEl, "transform", `translate3d(0, ${curY.toFixed(2)}px, 0)`);
+      } else {
+        creditsEl.style.removeProperty("transform");
+      }
+    }
+  }
+
   for (let index = startIdx; index < endIdx; index++) {
     const line = arr[index];
-
-    // Apply Line-level staggered animations (Simple Mode OR AML OR Swipe)
-    if ((isSimpleMode || isAML || isSwipe) && line.AnimatorStoreLine) {
-      const curY = line.AnimatorStoreLine.Y.Step(deltaTime);
-      const curOp = line.AnimatorStoreLine.Opacity.Step(deltaTime);
-      const curBlur = line.AnimatorStoreLine.Blur.Step(deltaTime);
-
-      setStyleIfChanged(line.HTMLElement, "transform", `translate3d(0, ${curY.toFixed(2)}px, 0)`);
-      setStyleIfChanged(line.HTMLElement, "opacity", curOp.toFixed(3));
-      setStyleIfChanged(line.HTMLElement, "filter", curBlur > 0.1 ? `blur(${curBlur.toFixed(2)}px)` : 'none');
-    }
 
     const lineActive = position >= line.StartTime && position <= line.EndTime;
     const lineSung = position > line.EndTime;
@@ -374,6 +409,21 @@ function animateSyllable(position, deltaTime) {
           const pct = getProgressPercentage(position, word.StartTime, word.EndTime);
           const targetGradientPos = -20 + 120 * pct;
           word.HTMLElement.style.setProperty("--gradient-position", `${targetGradientPos.toFixed(2)}%`);
+          
+          // Clear any stale spring animator styles
+          word.HTMLElement.style.removeProperty("scale");
+          word.HTMLElement.style.removeProperty("transform");
+          word.HTMLElement.style.removeProperty("--text-shadow-blur-radius");
+          word.HTMLElement.style.removeProperty("--text-shadow-opacity");
+          
+          if (word.Letters) {
+            word.Letters.forEach(letter => {
+              letter.HTMLElement.style.removeProperty("scale");
+              letter.HTMLElement.style.removeProperty("transform");
+              letter.HTMLElement.style.removeProperty("--text-shadow-blur-radius");
+              letter.HTMLElement.style.removeProperty("--text-shadow-opacity");
+            });
+          }
           continue;
         }
 
@@ -656,19 +706,54 @@ function animateLine(position, deltaTime) {
   const startIdx = Math.max(0, searchIdx - offsetSearch);
   const endIdx = Math.min(arr.length, searchIdx + offsetSearch + 5);
 
+  // First step all line-level staggered animations (with snapping for lines outside window)
+  if (isSimpleMode || isAML) {
+    for (let index = 0; index < arr.length; index++) {
+      const line = arr[index];
+      if (line.AnimatorStoreLine) {
+        let curY, curOp, curBlur;
+        if (index >= startIdx && index < endIdx) {
+          curY = line.AnimatorStoreLine.Y.Step(deltaTime);
+          curOp = line.AnimatorStoreLine.Opacity.Step(deltaTime);
+          curBlur = line.AnimatorStoreLine.Blur.Step(deltaTime);
+        } else {
+          // Snap instantly if outside active window to prevent stacking
+          curY = line.AnimatorStoreLine.Y.target;
+          line.AnimatorStoreLine.Y.position = curY;
+          line.AnimatorStoreLine.Y.velocity = 0;
+          
+          curOp = line.AnimatorStoreLine.Opacity.target;
+          line.AnimatorStoreLine.Opacity.position = curOp;
+          line.AnimatorStoreLine.Opacity.velocity = 0;
+          
+          curBlur = line.AnimatorStoreLine.Blur.target;
+          line.AnimatorStoreLine.Blur.position = curBlur;
+          line.AnimatorStoreLine.Blur.velocity = 0;
+        }
+
+        setStyleIfChanged(line.HTMLElement, "transform", `translate3d(0, ${curY.toFixed(2)}px, 0)`);
+        setStyleIfChanged(line.HTMLElement, "opacity", curOp.toFixed(3));
+        setStyleIfChanged(line.HTMLElement, "filter", curBlur > 0.1 ? `blur(${curBlur.toFixed(2)}px)` : 'none');
+      }
+    }
+  }
+
+  // Sync credits translation with the last line's translation to prevent overlap
+  const lastLine = arr[arr.length - 1];
+  if (lastLine) {
+    const creditsEl = lastLine.HTMLElement.parentElement?.querySelector(".Credits");
+    if (creditsEl) {
+      if ((isSimpleMode || isAML) && lastLine.AnimatorStoreLine) {
+        const curY = lastLine.AnimatorStoreLine.Y.position;
+        setStyleIfChanged(creditsEl, "transform", `translate3d(0, ${curY.toFixed(2)}px, 0)`);
+      } else {
+        creditsEl.style.removeProperty("transform");
+      }
+    }
+  }
+
   for (let index = startIdx; index < endIdx; index++) {
     const line = arr[index];
-
-    // Apply Line-level staggered animations (Simple Mode OR AML)
-    if ((isSimpleMode || isAML) && line.AnimatorStoreLine) {
-      const curY = line.AnimatorStoreLine.Y.Step(deltaTime);
-      const curOp = line.AnimatorStoreLine.Opacity.Step(deltaTime);
-      const curBlur = line.AnimatorStoreLine.Blur.Step(deltaTime);
-
-      setStyleIfChanged(line.HTMLElement, "transform", `translate3d(0, ${curY.toFixed(2)}px, 0)`);
-      setStyleIfChanged(line.HTMLElement, "opacity", curOp.toFixed(3));
-      setStyleIfChanged(line.HTMLElement, "filter", curBlur > 0.1 ? `blur(${curBlur.toFixed(2)}px)` : 'none');
-    }
 
     const lineActive = position >= line.StartTime && position <= line.EndTime;
 

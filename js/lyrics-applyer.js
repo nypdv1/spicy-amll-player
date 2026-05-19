@@ -80,13 +80,11 @@ function applyEmphasis(letters, wordElem, lead, isBgWord = false) {
       letterElem.classList.add("LastLetterInWord");
     }
 
-    if (!settingsManager.get("simpleLyricsMode")) {
+    if (!settingsManager.get("simpleLyricsMode") && !settingsManager.get("swipeLyrics")) {
       letterElem.style.setProperty("--gradient-position", "-20%");
+      letterElem.style.scale = IDLE_LYRICS_SCALE.toString();
+      letterElem.style.transform = `translateY(calc(var(--DefaultLyricsSize) * 0.02))`;
     }
-    letterElem.style.setProperty("--text-shadow-opacity", "0%");
-    letterElem.style.setProperty("--text-shadow-blur-radius", "4px");
-    letterElem.style.scale = IDLE_LYRICS_SCALE.toString();
-    letterElem.style.transform = `translateY(calc(var(--DefaultLyricsSize) * 0.02))`;
 
     letterDataArr.push({
       HTMLElement: letterElem,
@@ -203,7 +201,8 @@ export function applySyllableLyrics(data, lyricsContentEl) {
     }
 
     syllablesToRender.forEach((lead, iL, aL) => {
-      const displayText = (!showTranslation && showRomanized && lead.RomanizedText !== undefined) ? lead.RomanizedText : lead.Text;
+      const rawText = ((!showTranslation && showRomanized && lead.RomanizedText !== undefined) ? lead.RomanizedText : lead.Text) ?? "";
+      const displayText = settingsManager.get("trimSyllableSpaces") ? rawText.trim() : rawText;
       const totalDuration = convertTime(lead.EndTime) - convertTime(lead.StartTime);
       const isEmphasized = isLetterCapable(displayText, totalDuration);
       
@@ -217,7 +216,7 @@ export function applySyllableLyrics(data, lyricsContentEl) {
       } else {
         word = document.createElement("span");
         word.textContent = transformText(displayText);
-        if (!settingsManager.get("simpleLyricsMode")) {
+        if (!settingsManager.get("simpleLyricsMode") && !settingsManager.get("swipeLyrics")) {
           word.style.setProperty("--gradient-position", "-20%");
           word.style.setProperty("--text-shadow-opacity", "0%");
           word.style.setProperty("--text-shadow-blur-radius", "4px");
@@ -302,7 +301,8 @@ export function applySyllableLyrics(data, lyricsContentEl) {
         let currentBGWordGroup = null;
 
         bg.Syllables.forEach((bw, bI, bA) => {
-          const displayBgText = (showRomanized && bw.RomanizedText !== undefined) ? bw.RomanizedText : bw.Text;
+          const rawBgText = ((showRomanized && bw.RomanizedText !== undefined) ? bw.RomanizedText : bw.Text) ?? "";
+          const displayBgText = settingsManager.get("trimSyllableSpaces") ? rawBgText.trim() : rawBgText;
           const totalDuration = convertTime(bw.EndTime) - convertTime(bw.StartTime);
           const isEmphasized = isLetterCapable(displayBgText, totalDuration);
 
@@ -316,7 +316,7 @@ export function applySyllableLyrics(data, lyricsContentEl) {
           } else {
             bwE = document.createElement("span");
             bwE.textContent = transformText(displayBgText);
-            if (!settingsManager.get("simpleLyricsMode")) {
+            if (!settingsManager.get("simpleLyricsMode") && !settingsManager.get("swipeLyrics")) {
               bwE.style.setProperty("--gradient-position", "0%");
               bwE.style.setProperty("--text-shadow-opacity", "0%");
               bwE.style.setProperty("--text-shadow-blur-radius", "4px");

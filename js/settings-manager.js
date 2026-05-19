@@ -80,6 +80,7 @@ class SettingsManager {
       videoExportOrientation: "Vertical", // Vertical, Horizontal
       videoExportResolution: "1080p", // 720p, 1080p
       forceWordSync: false,
+      trimSyllableSpaces: true,
       showRomanized: false,
       showSongwriters: true,
       dolbyAtmos: false,
