@@ -459,7 +459,7 @@ export function convertToSyllable(data) {
       }
 
       return {
-        Text: capturedText.trim(),
+        Text: settingsManager.get("trimSyllableSpaces") ? capturedText.trim() : capturedText,
         StartTime: start,
         EndTime: end,
         IsPartOfWord: false
