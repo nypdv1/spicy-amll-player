@@ -152,6 +152,9 @@ export function applySyllableLyrics(data, lyricsContentEl) {
   const container = document.createElement("div");
   container.classList.add("SpicyLyricsScrollContainer");
   container.setAttribute("data-lyrics-type", "Syllable");
+  if (data.IsConvertedLine) {
+    container.classList.add("is-converted-line");
+  }
   if (settingsManager.get("simpleLyricsMode")) {
     container.classList.add("sl-simple-mode");
   }
@@ -165,6 +168,9 @@ export function applySyllableLyrics(data, lyricsContentEl) {
   data.Content.forEach((line, index, arr) => {
     const lineElem = document.createElement("div");
     lineElem.classList.add("line");
+    if (data.IsConvertedLine) {
+      lineElem.classList.add("is-converted-line");
+    }
     lineElem.setAttribute("dir", "auto");
 
     const nextLineStartTime = arr[index + 1]?.Lead.StartTime ?? 0;
@@ -176,9 +182,10 @@ export function applySyllableLyrics(data, lyricsContentEl) {
       StartTime: convertTime(line.Lead.StartTime),
       EndTime: convertTime(lineEndTime),
       TotalTime: convertTime(lineEndTime) - convertTime(line.Lead.StartTime),
+      IsConvertedLine: data.IsConvertedLine,
     });
     setWordArrayInCurrentLine();
-
+    
     if (line.OppositeAligned) lineElem.classList.add("OppositeAligned");
 
     container.appendChild(lineElem);
@@ -292,6 +299,7 @@ export function applySyllableLyrics(data, lyricsContentEl) {
           EndTime: convertTime(bg.EndTime),
           TotalTime: convertTime(bg.EndTime) - convertTime(bg.StartTime),
           BGLine: true,
+          IsConvertedLine: data.IsConvertedLine,
         });
         setWordArrayInCurrentLine();
 
@@ -420,159 +428,106 @@ function getTextWeight(text) {
  * Preserves original spacing and punctuation into the syllable tokens.
  */
 export function convertToSyllable(data) {
-  const processTextSegment = (text, startTime, endTime) => {
-    const rawWords = text.split(/\s+/).filter(Boolean);
-    if (rawWords.length === 0) return [];
+  try {
+    const processTextSegment = (text, startTime, endTime) => {
+      if (!text || typeof text !== "string") return [];
+      const rawWords = text.split(/\s+/).filter(Boolean);
+      if (rawWords.length === 0) return [];
 
-    const totalDuration = (endTime && endTime > startTime) ? endTime - startTime : 1.5;
-    const weights = rawWords.map(w => getTextWeight(w));
-    const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+      const totalDuration = (endTime && endTime > startTime) ? endTime - startTime : 1.5;
+      const weights = rawWords.map(w => getTextWeight(w));
+      const totalWeight = weights.reduce((sum, w) => sum + w, 0);
 
-    let currentCursor = startTime;
-    let currentPosInLine = 0;
+      let currentCursor = startTime;
+      let currentPosInLine = 0;
 
-    return rawWords.map((word, i) => {
-      const weight = weights[i];
-      const wordDuration = (weight / totalWeight) * totalDuration;
-      const start = currentCursor;
-      const end = currentCursor + wordDuration;
-      currentCursor = end;
+      return rawWords.map((word, i) => {
+        const weight = weights[i];
+        const wordDuration = (weight / totalWeight) * totalDuration;
+        const start = currentCursor;
+        const end = currentCursor + wordDuration;
+        currentCursor = end;
 
-      // Find the exact text in the line for spacing/punctuation accuracy
-      const foundIdx = text.indexOf(word, currentPosInLine);
-      let capturedText = word;
-      
-      if (foundIdx !== -1) {
-        // Find where the next word starts to capture the "gap" (spaces/punctuation)
-        const nextWord = rawWords[i + 1];
-        let nextIdx = nextWord ? text.indexOf(nextWord, foundIdx + word.length) : text.length;
+        // Find the exact text in the line for spacing/punctuation accuracy
+        const foundIdx = text.indexOf(word, currentPosInLine);
+        let capturedText = word;
         
-        // If we found the next word, capture everything from current word start to next word start
-        if (nextIdx !== -1) {
-          capturedText = text.substring(foundIdx, nextIdx);
-          currentPosInLine = nextIdx;
-        } else {
-          // Last word, capture everything to the end
-          capturedText = text.substring(foundIdx);
-          currentPosInLine = text.length;
+        if (foundIdx !== -1) {
+          // Find where the next word starts to capture the "gap" (spaces/punctuation)
+          const nextWord = rawWords[i + 1];
+          let nextIdx = nextWord ? text.indexOf(nextWord, foundIdx + word.length) : text.length;
+          
+          // If we found the next word, capture everything from current word start to next word start
+          if (nextIdx !== -1) {
+            capturedText = text.substring(foundIdx, nextIdx);
+            currentPosInLine = nextIdx;
+          } else {
+            // Last word, capture everything to the end
+            capturedText = text.substring(foundIdx);
+            currentPosInLine = text.length;
+          }
         }
-      }
 
-      return {
-        Text: capturedText.trim(),
-        StartTime: start,
-        EndTime: end,
-        IsPartOfWord: false
-      };
-    });
-  };
+        return {
+          Text: capturedText.trim(),
+          StartTime: start,
+          EndTime: end,
+          IsPartOfWord: false
+        };
+      });
+    };
 
-  const syllableData = {
-    ...data,
-    Type: "Syllable",
-    Content: data.Content.map(line => {
-      const leadSyllables = processTextSegment(line.Text, line.StartTime, line.EndTime);
-      if (leadSyllables.length === 0) return null;
+    const syllableData = {
+      ...data,
+      Type: "Syllable",
+      IsConvertedLine: !settingsManager.get("forceWordSync"),
+      Content: data.Content.map(line => {
+        if (!line) return null;
+        const textVal = line.Text || "";
+        const leadSyllables = processTextSegment(textVal, line.StartTime, line.EndTime);
+        if (leadSyllables.length === 0) return null;
 
-      const res = {
-        OppositeAligned: line.OppositeAligned,
-        Lead: {
-          StartTime: line.StartTime,
-          EndTime: line.EndTime,
-          Syllables: leadSyllables
+        const res = {
+          OppositeAligned: !!line.OppositeAligned,
+          Lead: {
+            StartTime: line.StartTime,
+            EndTime: line.EndTime,
+            Syllables: leadSyllables
+          }
+        };
+
+        // Preserve translated and romanized text
+        if (line.TranslatedText) res.TranslatedText = line.TranslatedText;
+        if (line.RomanizedText) res.RomanizedText = line.RomanizedText;
+
+        // Handle background vocals if they exist in the line data
+        if (line.Background && Array.isArray(line.Background) && line.Background.length > 0) {
+          res.Background = line.Background.map(bg => {
+            if (!bg) return null;
+            const bgText = bg.Text || bg.Syllables?.map(s => s.Text).join("") || "";
+            return {
+              StartTime: bg.StartTime,
+              EndTime: bg.EndTime,
+              Syllables: processTextSegment(bgText, bg.StartTime, bg.EndTime)
+            };
+          }).filter(Boolean);
         }
-      };
 
-      // Handle background vocals if they exist in the line data
-      if (line.Background && Array.from(line.Background).length > 0) {
-        res.Background = line.Background.map(bg => {
-          // If background already has syllables (e.g. from a partial word-sync parse), reconstruct text first
-          const bgText = bg.Text || bg.Syllables?.map(s => s.Text).join("") || "";
-          return {
-            StartTime: bg.StartTime,
-            EndTime: bg.EndTime,
-            Syllables: processTextSegment(bgText, bg.StartTime, bg.EndTime)
-          };
-        });
-      }
-
-      return res;
-    }).filter(Boolean)
-  };
-  return syllableData;
+        return res;
+      }).filter(Boolean)
+    };
+    return syllableData;
+  } catch (err) {
+    console.error("[SpicyPlayer] convertToSyllable failed:", err);
+    return data;
+  }
 }
 
 /**
  * Apply Line-synced lyrics to the DOM.
  */
 export function applyLineLyrics(data, lyricsContentEl) {
-  const showRomanized = settingsManager.get("showRomanized");
-  const showTranslation = settingsManager.get("showTranslation");
-  LyricsObject.RawData = data;
-  if (settingsManager.get("forceWordSync")) {
-    return applySyllableLyrics(convertToSyllable(data), lyricsContentEl);
-  }
-
-  clearLyricsArrays();
-
-  const container = document.createElement("div");
-  container.classList.add("SpicyLyricsScrollContainer");
-  container.setAttribute("data-lyrics-type", "Line");
-  if (settingsManager.get("simpleLyricsMode")) {
-    container.classList.add("sl-simple-mode");
-  }
-
-  if (data.StartTime >= LYRICS_BETWEEN_SHOW) {
-    createMusicalLine(container, 0, convertTime(data.StartTime + INTERLUDE_EARLIER_BY),
-      data.Content[0]?.OppositeAligned, "Line");
-  }
-
-  data.Content.forEach((line, index, arr) => {
-    const lineElem = document.createElement("div");
-    lineElem.classList.add("line");
-    lineElem.setAttribute("dir", "auto");
-
-    LyricsObject.Types.Line.Lines.push({
-      HTMLElement: lineElem,
-      StartTime: convertTime(line.StartTime),
-      EndTime: convertTime(line.EndTime),
-      TotalTime: convertTime(line.EndTime) - convertTime(line.StartTime),
-    });
-    setWordArrayInCurrentLine_LINE();
-
-    if (line.OppositeAligned) lineElem.classList.add("OppositeAligned");
-    
-    const displayText = (showTranslation && line.TranslatedText !== undefined) ? line.TranslatedText : (showRomanized && line.RomanizedText !== undefined) ? line.RomanizedText : line.Text;
-    if (isRtl(displayText)) lineElem.classList.add("rtl");
-
-    // For line-synced, text is a single word element
-    const wordElem = document.createElement("span");
-    wordElem.classList.add("word");
-    wordElem.textContent = transformText(displayText);
-    lineElem.appendChild(wordElem);
-
-    container.appendChild(lineElem);
-
-    // Interlude dots
-    if (arr[index + 1] && arr[index + 1].StartTime - line.EndTime >= LYRICS_BETWEEN_SHOW) {
-      createMusicalLine(container,
-        convertTime(line.EndTime),
-        convertTime(arr[index + 1].StartTime + INTERLUDE_EARLIER_BY),
-        arr[index + 1].OppositeAligned, "Line");
-    }
-  });
-
-  // Credits
-  renderCredits(data, container);
-
-  // Add spacer for centering
-  const spacer = document.createElement("div");
-  spacer.classList.add("lyrics-spacer");
-  container.appendChild(spacer);
-
-  lyricsContentEl.innerHTML = "";
-  lyricsContentEl.appendChild(container);
-  return container;
+  return applySyllableLyrics(convertToSyllable(data), lyricsContentEl);
 }
 
 

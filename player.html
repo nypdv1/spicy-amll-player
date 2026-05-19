@@ -605,8 +605,8 @@
       }
       
       let typeToRender = lyrics.Type;
-      // Handle Force Word Sync redirection
-      if (typeToRender === 'Line' && settingsManager.get("forceWordSync")) {
+      // Handle line lyrics as syllable/word lyrics
+      if (typeToRender === 'Line') {
         typeToRender = 'Syllable';
       }
       
@@ -614,12 +614,11 @@
       if (lyricsNotice) lyricsNotice.style.display = 'none';
       
       if (typeToRender === 'Syllable') {
-        const data = (lyrics.Type === 'Line' && settingsManager.get("forceWordSync")) 
+        const data = (lyrics.Type === 'Line') 
           ? convertToSyllable(lyrics) 
           : lyrics;
         applySyllableLyrics(data, lyricsContent);
       }
-      else if (typeToRender === 'Line') applyLineLyrics(lyrics, lyricsContent);
       else if (typeToRender === 'Static') applyStaticLyrics(lyrics, lyricsContent);
 
       initScrollManager(lyricsContent);
