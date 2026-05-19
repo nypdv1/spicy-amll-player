@@ -512,6 +512,7 @@ document.addEventListener('DOMContentLoaded', () => {
       collectionId: item.id,
       trackName: attr.name,
       artistName: attr.artistName,
+      artistId: item.relationships?.artists?.data?.[0]?.id || item.artistId || null,
       collectionName: attr.albumName || attr.name,
       artworkUrl100: artUrl,
       releaseDate: attr.releaseDate,
@@ -1128,75 +1129,182 @@ document.addEventListener('DOMContentLoaded', () => {
 
      artistViewContent.innerHTML = `<div class="am-loading-msg" style="padding-top:40px;">Fetching Artist Profile...</div>`;
 
-     try {
-       // Search for artist top songs & albums
-       // const data = await itunesFetch(`https://itunes.apple.com/search?term=${encodeURIComponent(artistName)}&entity=song&limit=4`);
-       const res = await fetch(`https://api.spicyamll.online/itunes/search?term=${encodeURIComponent(artistName)}&entity=song&limit=4`);
-       const data = await res.json();
-       const songs = data.results;
-
-       const albRes = await fetch(`https://api.spicyamll.online/itunes/search?term=${encodeURIComponent(artistName)}&entity=album&limit=1`);
-       const albData = await albRes.json();
-       const latestAlbum = albData.results[0];
-
-       // For the UI we need an artist photo. 
-       // Often artworkUrl100 of their latest song is what we use as placeholder, or we replace with large version.
-       const placeholderPhoto = songs[0] ? songs[0].artworkUrl100.replace('100x100', '600x600') : 'favicon.svg';
-       
-       let songsHTML = songs.map(s => {
-         const safeName = escapeHTML(s.trackName);
-         return `
-         <div class="am-track-row" data-id="${s.trackId}">
-           <img src="${s.artworkUrl100}" width="40" height="40" style="border-radius:6px; margin-right:15px;">
-           <div class="am-track-title">${safeName} <span style="font-size:0.7rem;color:#777;background:rgba(255,255,255,0.1);padding:2px 4px;border-radius:4px;margin-left:6px;">E</span></div>
-           <svg class="am-track-more" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-              <path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-           </svg>
-         </div>
-       `;
-       }).join('');
-
-       artistViewContent.innerHTML = `
-          <div class="am-artist-header">
-             <img src="${placeholderPhoto}" class="am-artist-image">
-             <div class="am-artist-name-row">
-                 <div class="am-artist-play-btn"><svg viewBox="0 0 24 24" fill="#fff" width="24" height="24"><path d="M8 5v14l11-7z"/></svg></div>
-                 <h2 class="am-artist-name">${escapeHTML(artistName)}</h2>
-             </div>
-          </div>
-          <div class="am-artist-content-grid">
-             <div>
-                <h3 style="margin-bottom:15px; font-weight:700;">Latest Release</h3>
-                ${latestAlbum ? `
-                <div class="am-latest-release-card">
-                   <img src="${latestAlbum.artworkUrl100.replace('100x100', '300x300')}">
-                   <div style="display:flex; flex-direction:column; justify-content:center;">
-                      <div style="font-size:0.7rem; color:rgba(255,255,255,0.4); text-transform:uppercase; font-weight:700; margin-bottom:4px;">${new Date(latestAlbum.releaseDate).getFullYear()}</div>
-                      <div style="font-weight:700; margin-bottom:4px; font-size:1rem;">${escapeHTML(latestAlbum.collectionName)}</div>
-                      <div style="font-size:0.8rem; color:rgba(255,255,255,0.4);">${latestAlbum.trackCount} songs</div>
-                   </div>
-                </div>` : '<p style="color:rgba(255,255,255,0.4)">No recent releases found.</p>'}
-             </div>
-             <div>
-                <h3 style="margin-bottom:15px; font-weight:700;">Top Songs</h3>
-                <div class="am-top-songs-list">${songsHTML}</div>
-             </div>
-          </div>
-       `;
-
-       artistViewContent.querySelectorAll('.am-track-row').forEach(row => {
-          row.onclick = (e) => {
-             const id = row.dataset.id;
-             const song = songs.find(s => s.trackId == id);
-             if (song) showContextMenu(e, song);
-          };
-       });
-
-     } catch (e) {
-       console.error(e);
-       artistViewContent.innerHTML = `<div class="am-error-msg">Failed to load artist profile.</div>`;
+     let realArtistId = artistId;
+     if (!realArtistId) {
+        try {
+           const searchRes = await fetch(`https://api.spicyamll.online/search?term=${encodeURIComponent(artistName)}&types=artists&limit=1`);
+           if (searchRes.ok) {
+              const searchData = await searchRes.json();
+              const foundArtist = searchData?.results?.artists?.data?.[0];
+              if (foundArtist) {
+                 realArtistId = foundArtist.id;
+              }
+           }
+        } catch (err) {
+           console.warn("[Artist Lookup] Failed to find artist ID:", err);
+        }
      }
-  }
+
+      try {
+        let songs = [];
+        let albums = [];
+        let latestAlbum = null;
+
+        if (realArtistId) {
+          // Fetch exact songs and albums using our new logic
+          const songsRes = await fetch(`https://api.spicyamll.online/artist/songs?artist=${realArtistId}&limit=10`);
+          if (songsRes.ok) {
+            const songsData = await songsRes.json();
+            songs = songsData.data?.map(mapSearchAmToItunes) || [];
+          }
+
+          const albumsRes = await fetch(`https://api.spicyamll.online/artist/albums?artist=${realArtistId}&limit=10`);
+          if (albumsRes.ok) {
+            const albumsData = await albumsRes.json();
+            albums = albumsData.data?.map(mapSearchAmToItunes) || [];
+            if (albums.length > 0) {
+              // Find latest release based on releaseDate
+              latestAlbum = [...albums].sort((a, b) => new Date(b.releaseDate) - new Date(a.releaseDate))[0];
+            }
+          }
+        }
+
+        // Fallback to fuzzy search if artistId could not be resolved or requests failed
+        if (songs.length === 0) {
+          console.log("[Artist View] Falling back to fuzzy iTunes search...");
+          const res = await fetch(`https://api.spicyamll.online/itunes/search?term=${encodeURIComponent(artistName)}&entity=song&limit=4`);
+          const data = await res.json();
+          songs = data.results || [];
+
+          const albRes = await fetch(`https://api.spicyamll.online/itunes/search?term=${encodeURIComponent(artistName)}&entity=album&limit=10`);
+          const albData = await albRes.json();
+          albums = albData.results || [];
+          latestAlbum = albums[0];
+        }
+
+        const placeholderPhoto = songs[0] ? songs[0].artworkUrl100.replace('100x100', '600x600') : 'favicon.svg';
+        
+        let songsHTML = songs.slice(0, 4).map(s => {
+          const safeName = escapeHTML(s.trackName);
+          return `
+          <div class="am-track-row" data-id="${s.trackId}">
+            <img src="${s.artworkUrl100}" width="40" height="40" style="border-radius:6px; margin-right:15px;">
+            <div class="am-track-title">${safeName} <span style="font-size:0.7rem;color:#777;background:rgba(255,255,255,0.1);padding:2px 4px;border-radius:4px;margin-left:6px;">E</span></div>
+            <svg class="am-track-more" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+               <path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+            </svg>
+          </div>
+        `;
+        }).join('');
+
+        let albumsHTML = albums.map(album => {
+          const safeName = escapeHTML(album.collectionName);
+          const safeArtist = escapeHTML(album.artistName);
+          return `
+            <div class="album-card animate-fade" data-id="${album.collectionId}" data-name="${safeName}" data-artist="${safeArtist}" data-art="${album.artworkUrl100}">
+              <img src="${album.artworkUrl100.replace('100x100', '300x300')}" class="album-art" loading="lazy">
+              <div class="album-info">
+                <h4>${safeName}</h4>
+                <p>${safeArtist}</p>
+              </div>
+            </div>
+          `;
+        }).join('') || '<p style="color:rgba(255,255,255,0.4)">No albums found.</p>';
+
+        let allSongsHTML = songs.map(s => {
+          const safeName = escapeHTML(s.trackName);
+          return `
+          <div class="am-track-row" data-id="${s.trackId}">
+            <img src="${s.artworkUrl100}" width="40" height="40" style="border-radius:6px; margin-right:15px;">
+            <div class="am-track-title">${safeName} <span style="font-size:0.7rem;color:#777;background:rgba(255,255,255,0.1);padding:2px 4px;border-radius:4px;margin-left:6px;">E</span></div>
+            <svg class="am-track-more" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+               <path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+            </svg>
+          </div>
+        `;
+        }).join('') || '<p style="color:rgba(255,255,255,0.4)">No songs found.</p>';
+
+        artistViewContent.innerHTML = `
+           <div class="am-artist-header">
+              <img src="${placeholderPhoto}" class="am-artist-image">
+              <div class="am-artist-name-row">
+                  <div class="am-artist-play-btn"><svg viewBox="0 0 24 24" fill="#fff" width="24" height="24"><path d="M8 5v14l11-7z"/></svg></div>
+                  <h2 class="am-artist-name">${escapeHTML(artistName)}</h2>
+              </div>
+           </div>
+           
+           <div class="am-artist-content-grid">
+              <div>
+                 <h3 style="margin-bottom:15px; font-weight:700;">Latest Release</h3>
+                 ${latestAlbum ? `
+                 <div class="am-latest-release-card" data-id="${latestAlbum.collectionId}" data-name="${escapeHTML(latestAlbum.collectionName)}" data-artist="${escapeHTML(latestAlbum.artistName)}" data-art="${latestAlbum.artworkUrl100}">
+                    <img src="${latestAlbum.artworkUrl100.replace('100x100', '300x300')}">
+                    <div style="display:flex; flex-direction:column; justify-content:center;">
+                       <div style="font-size:0.7rem; color:rgba(255,255,255,0.4); text-transform:uppercase; font-weight:700; margin-bottom:4px;">${latestAlbum.releaseDate ? new Date(latestAlbum.releaseDate).getFullYear() : 'Album'}</div>
+                       <div style="font-weight:700; margin-bottom:4px; font-size:1rem;">${escapeHTML(latestAlbum.collectionName)}</div>
+                       <div style="font-size:0.8rem; color:rgba(255,255,255,0.4);">${latestAlbum.trackCount ? latestAlbum.trackCount + ' songs' : ''}</div>
+                    </div>
+                 </div>` : '<p style="color:rgba(255,255,255,0.4)">No recent releases found.</p>'}
+              </div>
+              <div>
+                 <h3 style="margin-bottom:15px; font-weight:700;">Top Songs</h3>
+                 <div class="am-top-songs-list">${songsHTML}</div>
+              </div>
+           </div>
+
+           <div class="artist-albums-section" style="margin-top: 40px;">
+              <h3 style="margin-bottom: 20px; font-weight: 700; font-size: 1.5rem;">Albums</h3>
+              <div class="albums-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px;">
+                  ${albumsHTML}
+              </div>
+           </div>
+
+           <div class="artist-songs-section" style="margin-top: 40px; margin-bottom: 40px;">
+              <h3 style="margin-bottom: 20px; font-weight: 700; font-size: 1.5rem;">All Songs</h3>
+              <div class="am-top-songs-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
+                  ${allSongsHTML}
+              </div>
+           </div>
+        `;
+
+        artistViewContent.querySelectorAll('.am-track-row').forEach(row => {
+           row.onclick = (e) => {
+              const id = row.dataset.id;
+              const song = songs.find(s => s.trackId == id);
+              if (song) showContextMenu(e, song);
+           };
+        });
+
+        const latestReleaseCard = artistViewContent.querySelector('.am-latest-release-card');
+        if (latestReleaseCard) {
+          latestReleaseCard.onclick = () => {
+            const id = latestReleaseCard.dataset.id;
+            const name = latestReleaseCard.dataset.name;
+            const artist = latestReleaseCard.dataset.artist;
+            const art = latestReleaseCard.dataset.art;
+            if (id) {
+              openAlbumView(id, name, artist, art);
+            }
+          };
+        }
+
+        artistViewContent.querySelectorAll('.artist-albums-section .album-card').forEach(card => {
+          card.onclick = () => {
+            const id = card.dataset.id;
+            const name = card.dataset.name;
+            const artist = card.dataset.artist;
+            const art = card.dataset.art;
+            if (id) {
+              openAlbumView(id, name, artist, art);
+            }
+          };
+        });
+
+      } catch (e) {
+        console.error(e);
+        artistViewContent.innerHTML = `<div class="am-error-msg">Failed to load artist profile.</div>`;
+      }
+   }
 
   async function renderFavoritesPage() {
      const favoriteGrid = document.getElementById('favorite-tracks-grid');

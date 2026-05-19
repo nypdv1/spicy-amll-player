@@ -326,11 +326,51 @@ function parseParagraph(paragraph, div, body, oppositeAgents, transliterations, 
 
   applyRomanizedPieces(leadSyllables, lineKey ? transliterationPieces.get(lineKey) : undefined);
 
+  // Detect syllable sequences in brackets (e.g. starting with '(' and ending with ')')
+  let bgStartIdx = -1;
+  let bgEndIdx = -1;
+
+  for (let i = 0; i < leadSyllables.length; i++) {
+    const text = leadSyllables[i].Text.trim();
+    if (text.startsWith('(')) {
+      bgStartIdx = i;
+    }
+    if (bgStartIdx !== -1 && text.endsWith(')')) {
+      bgEndIdx = i;
+      
+      const bgSyllables = leadSyllables.slice(bgStartIdx, bgEndIdx + 1);
+      
+      // Clean parentheses from first and last syllables in the sequence
+      if (bgSyllables.length > 0) {
+        bgSyllables[0].Text = bgSyllables[0].Text.replace(/^\(/, '').trim();
+        const last = bgSyllables[bgSyllables.length - 1];
+        last.Text = last.Text.replace(/\)$/, '').trim();
+      }
+      
+      const filteredBg = bgSyllables.filter(s => s.Text);
+      if (filteredBg.length > 0) {
+        background.push({
+          StartTime: filteredBg[0].StartTime,
+          EndTime: filteredBg[filteredBg.length - 1].EndTime,
+          Syllables: filteredBg,
+        });
+      }
+      
+      // Remove these syllables from leadSyllables
+      leadSyllables.splice(bgStartIdx, bgEndIdx - bgStartIdx + 1);
+      
+      // Adjust index to account for splice
+      i = bgStartIdx - 1;
+      bgStartIdx = -1;
+      bgEndIdx = -1;
+    }
+  }
+
   let leadText = leadSyllables.length > 0
     ? buildTextFromSyllables(leadSyllables)
     : collectPlainText(plainNodes);
 
-  // Auto-detect background vocal if lead text is wrapped in parentheses
+  // Auto-detect background vocal if remaining lead text is wrapped in parentheses
   if (leadText.startsWith('(') && leadText.endsWith(')')) {
     const bgSyllables = leadSyllables.length > 0 ? leadSyllables : [{
       Text: leadText,

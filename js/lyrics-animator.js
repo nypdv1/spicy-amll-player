@@ -391,7 +391,29 @@ function animateSyllable(position, deltaTime) {
     const lineActive = position >= line.StartTime && position <= line.EndTime;
     const lineSung = position > line.EndTime;
 
-    if (lineActive) {
+    if (line.IsConvertedLine || line.HTMLElement.parentElement?.classList.contains("is-converted-line")) {
+      if (line.Syllables?.Lead) {
+        for (let wi = 0; wi < line.Syllables.Lead.length; wi++) {
+          const word = line.Syllables.Lead[wi];
+          if (lineActive) {
+            setStyleIfChanged(word.HTMLElement, "--gradient-position", "100%");
+            setStyleIfChanged(word.HTMLElement, "scale", "1");
+            setStyleIfChanged(word.HTMLElement, "transform", "none");
+            setStyleIfChanged(word.HTMLElement, "--text-shadow-opacity", "0%");
+            setStyleIfChanged(word.HTMLElement, "opacity", "1");
+          } else {
+            setStyleIfChanged(word.HTMLElement, "--gradient-position", "-20%");
+            setStyleIfChanged(word.HTMLElement, "scale", "0.95");
+            setStyleIfChanged(word.HTMLElement, "transform", "translateY(calc(var(--DefaultLyricsSize) * 0.01))");
+            setStyleIfChanged(word.HTMLElement, "--text-shadow-opacity", "0%");
+            setStyleIfChanged(word.HTMLElement, "opacity", "1");
+          }
+        }
+      }
+      continue;
+    }
+
+    if (lineActive || lineSung || isSwipe) {
       if (blurringLastLine !== index) {
         if (!isAML && !isSwipe) applyBlur(arr, index);
         blurringLastLine = index;
