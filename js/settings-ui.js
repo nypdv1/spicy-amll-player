@@ -91,6 +91,7 @@ class SettingsUI {
     this.addDropdown(container, "Release Year Position", "releaseYearPosition", ["Off", "Before Artist", "After Artist"]);
     this.addToggle(container, "Show Songwriters", "showSongwriters");
     this.addToggle(container, "Force Word Sync", "forceWordSync");
+    this.addToggle(container, "Fix Syllable Spacing", "trimSyllableSpaces");
     this.addToggle(container, "Dolby Atmos Icon (Purely for Aesthetics)", "dolbyAtmos");
     this.addToggle(container, "AirPods Icon (Purely for Aesthetics)", "airPodsIcon");
     this.addToggle(container, "Hide Lyrics Provider Box", "hideLyricsProvider");
