@@ -439,30 +439,41 @@ function convertLyricsPlusWordSync(data) {
     let inBracketedSection = false;
 
     const syllabusArray = line.syllabus || [];
-
+    let textCursor = 0;
     syllabusArray.forEach((syl, index) => {
-      // Check if original text contains whitespace
-      const hasWhitespace = /\s/.test(syl.text);
+      const sylTrimmed = syl.text.trim();
       
-      // If has whitespace, use as-is; otherwise trim and use IsPartOfWord logic
-      let syllableText, isPartOfWord;
-      if (hasWhitespace) {
-        syllableText = syl.text;
-        isPartOfWord = false;
-      } else {
-        syllableText = syl.text.trim();
-        // IsPartOfWord: true if there's a next syllable (continues without space)
-        isPartOfWord = index < syllabusArray.length - 1;
+      let isPartOfWord = false;
+      if (index < syllabusArray.length - 1) {
+        const nextSyl = syllabusArray[index + 1];
+        const nextSylTrimmed = nextSyl.text.trim();
+        
+        if (sylTrimmed && nextSylTrimmed && line.text) {
+          const firstIdx = line.text.toLowerCase().indexOf(sylTrimmed.toLowerCase(), textCursor);
+          if (firstIdx !== -1) {
+            const secondIdx = line.text.toLowerCase().indexOf(nextSylTrimmed.toLowerCase(), firstIdx + sylTrimmed.length);
+            if (secondIdx !== -1) {
+              const betweenText = line.text.substring(firstIdx + sylTrimmed.length, secondIdx);
+              isPartOfWord = !/\s/.test(betweenText);
+              textCursor = firstIdx;
+            } else {
+              isPartOfWord = index < syllabusArray.length - 1;
+            }
+          } else {
+            isPartOfWord = index < syllabusArray.length - 1;
+          }
+        } else {
+          isPartOfWord = index < syllabusArray.length - 1;
+        }
       }
       
       const syllableObj = {
-        Text: syllableText,
+        Text: sylTrimmed,
         StartTime: Math.max(0, (syl.time / 1000) - 0.2),
         EndTime: Math.max(0, ((syl.time + syl.duration) / 1000) - 0.2),
         IsPartOfWord: isPartOfWord
       };
 
-      const sylTrimmed = syl.text.trim();
       if (sylTrimmed.startsWith('(')) {
         inBracketedSection = true;
       }

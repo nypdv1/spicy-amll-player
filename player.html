@@ -222,6 +222,8 @@
     );
     let lyricsType = 'None';
     let parsedLyrics = null;
+    let isDraggingProgress = false;
+    let dragPosition = 0;
     let animationFrameId = null;
     let songMetadata = { title: '', artist: '', album: '', artUrl: null };
     let currentQueue = [];
@@ -846,12 +848,66 @@
     // Initialize volume slider fill
     updateVolumeSliderFill(parseFloat(volumeSlider.value));
 
-    progressBar.onclick = (e) => {
+    function handleProgressBarDrag(clientX) {
       const rect = progressBar.getBoundingClientRect();
-      const pct = (e.clientX - rect.left) / rect.width;
-      player.seek(pct * player.duration);
-      queueForceScroll();
-    };
+      const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      progressFill.style.width = `${pct * 100}%`;
+      dragPosition = pct * player.duration;
+      timeCurrent.textContent = AudioPlayer.formatTime(dragPosition);
+      return pct;
+    }
+
+    progressBar.addEventListener('mousedown', (e) => {
+      isDraggingProgress = true;
+      const pct = handleProgressBarDrag(e.clientX);
+      
+      const onMouseMove = (moveEvent) => {
+        if (!isDraggingProgress) return;
+        handleProgressBarDrag(moveEvent.clientX);
+      };
+      
+      const onMouseUp = (upEvent) => {
+        if (isDraggingProgress) {
+          isDraggingProgress = false;
+          const finalPct = handleProgressBarDrag(upEvent.clientX);
+          player.seek(finalPct * player.duration);
+          queueForceScroll();
+        }
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+      };
+      
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    });
+
+    progressBar.addEventListener('touchstart', (e) => {
+      isDraggingProgress = true;
+      const touch = e.touches[0];
+      const pct = handleProgressBarDrag(touch.clientX);
+      
+      const onTouchMove = (moveEvent) => {
+        if (!isDraggingProgress) return;
+        const moveTouch = moveEvent.touches[0];
+        handleProgressBarDrag(moveTouch.clientX);
+      };
+      
+      const onTouchEnd = (endEvent) => {
+        if (isDraggingProgress) {
+          isDraggingProgress = false;
+          const rect = progressBar.getBoundingClientRect();
+          const lastTouch = endEvent.changedTouches[0] || endEvent.touches[0];
+          const pct = Math.max(0, Math.min(1, (lastTouch.clientX - rect.left) / rect.width));
+          player.seek(pct * player.duration);
+          queueForceScroll();
+        }
+        document.removeEventListener('touchmove', onTouchMove);
+        document.removeEventListener('touchend', onTouchEnd);
+      };
+      
+      document.addEventListener('touchmove', onTouchMove, { passive: true });
+      document.addEventListener('touchend', onTouchEnd);
+    });
 
     lyricsContent.onclick = (e) => {
       const target = e.target;
@@ -924,16 +980,18 @@
 
     function startAnimationLoop() {
       function loop() {
-        const pos = player.getPosition();
+        const pos = isDraggingProgress ? dragPosition : player.getPosition();
         setLyricsTime(pos, lyricsType);
         if (!document.hidden) {
-          if (player.duration > 0) {
+          if (player.duration > 0 && !isDraggingProgress) {
             progressFill.style.width = `${Math.min((pos / player.duration) * 100, 100)}%`;
             timeTotal.textContent = AudioPlayer.formatTime(player.duration - pos, true);
           }
-          timeCurrent.textContent = AudioPlayer.formatTime(pos);
+          if (!isDraggingProgress) {
+            timeCurrent.textContent = AudioPlayer.formatTime(pos);
+          }
           animateLyrics(pos, lyricsType, false);
-          scrollToActiveLine(lyricsContent);
+          scrollToActiveLine(lyricsContent, isDraggingProgress);
         } else {
           animateLyrics(pos, lyricsType, true);
         }
@@ -1041,6 +1099,11 @@
       <p>hey this button doesnt do anything, its just there for aesthetics lmao</p>
       <button class="popup-close" id="btn-close-popup">Close</button>
     </div>
+  </div>
+
+  <!-- Apple Style Dynamic Toast -->
+  <div class="SpicyToast" id="spicy-toast">
+    <span class="toast-text"></span>
   </div>
 </body>
 

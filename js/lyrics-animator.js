@@ -391,13 +391,14 @@ function animateSyllable(position, deltaTime) {
     const lineActive = position >= line.StartTime && position <= line.EndTime;
     const lineSung = position > line.EndTime;
 
-    if (lineActive || lineSung || isSwipe) {
+    if (lineActive) {
       if (blurringLastLine !== index) {
         if (!isAML && !isSwipe) applyBlur(arr, index);
         blurringLastLine = index;
       }
+    }
 
-      if (!line.Syllables?.Lead) continue;
+    if (!line.Syllables?.Lead) continue;
 
       for (let wi = 0; wi < line.Syllables.Lead.length; wi++) {
         const word = line.Syllables.Lead[wi];
@@ -418,6 +419,7 @@ function animateSyllable(position, deltaTime) {
           
           if (word.Letters) {
             word.Letters.forEach(letter => {
+              letter.HTMLElement.style.setProperty("--gradient-position", `${targetGradientPos.toFixed(2)}%`);
               letter.HTMLElement.style.removeProperty("scale");
               letter.HTMLElement.style.removeProperty("transform");
               letter.HTMLElement.style.removeProperty("--text-shadow-blur-radius");
@@ -669,7 +671,6 @@ function animateSyllable(position, deltaTime) {
         }
       }
     }
-  }
   flushStyleBatch();
 }
 
@@ -756,6 +757,7 @@ function animateLine(position, deltaTime) {
     const line = arr[index];
 
     const lineActive = position >= line.StartTime && position <= line.EndTime;
+    const lineSung = position > line.EndTime;
 
     if (lineActive) {
       if (blurringLastLine !== index) {
@@ -765,92 +767,107 @@ function animateLine(position, deltaTime) {
 
       line.HTMLElement.classList.add("Active");
       line.HTMLElement.classList.remove("NotSung", "Sung");
+    }
 
-      const pct = getProgressPercentage(position, line.StartTime, line.EndTime);
-      const gradientPos = -20 + 120 * pct;
+    const wordEl = line.HTMLElement.querySelector('.word');
 
-      const wordEl = line.HTMLElement.querySelector('.word');
-
-      if (wordEl) {
+    if (wordEl) {
+      if (lineActive) {
+        const pct = getProgressPercentage(position, line.StartTime, line.EndTime);
+        const gradientPos = -20 + 120 * pct;
         if (isSimpleMode) {
-          // Subtle glow focus for simple mode
           setStyleIfChanged(wordEl, "text-shadow", "0 0 10px color-mix(in srgb, rgba(var(--ArtworkGlowColor, 255, 255, 255), 0.264) 40%, rgba(255,255,255,0.264))", 0.1);
           setStyleIfChanged(wordEl, "opacity", "1", 0.01);
         } else {
-          wordEl.style.setProperty("--gradient-position", `${gradientPos}%`);
-          // Clear any simple mode inline styles if we toggled back
+          wordEl.style.setProperty("--gradient-position", `${gradientPos.toFixed(2)}%`);
+          wordEl.style.removeProperty("text-shadow");
+        }
+      } else if (lineSung) {
+        if (isSimpleMode) {
+          setStyleIfChanged(wordEl, "text-shadow", "none");
+          setStyleIfChanged(wordEl, "opacity", "0.5", 0.01);
+        } else {
+          wordEl.style.setProperty("--gradient-position", "100%");
+          wordEl.style.removeProperty("text-shadow");
+        }
+      } else {
+        if (isSimpleMode) {
+          setStyleIfChanged(wordEl, "text-shadow", "none");
+          setStyleIfChanged(wordEl, "opacity", "0.5", 0.01);
+        } else {
+          wordEl.style.setProperty("--gradient-position", "-20%");
           wordEl.style.removeProperty("text-shadow");
         }
       }
+    }
 
-      // dot animation
-      if (line.DotLine && line.Syllables?.Lead) {
-        for (let i = 0; i < line.Syllables.Lead.length; i++) {
-          const dot = line.Syllables.Lead[i];
+    // dot animation
+    if (line.DotLine && line.Syllables?.Lead) {
+      for (let i = 0; i < line.Syllables.Lead.length; i++) {
+        const dot = line.Syllables.Lead[i];
 
-          if (!dot.AnimatorStore) {
-            dot.AnimatorStore = createDotSprings();
-            dot.AnimatorStore.Scale.SetGoal(DotScaleSpline.at(0), true);
-            dot.AnimatorStore.YOffset.SetGoal(DotYOffsetSpline.at(0), true);
-            dot.AnimatorStore.Glow.SetGoal(DotGlowSpline.at(0), true);
-            dot.AnimatorStore.Opacity.SetGoal(DotOpacitySpline.at(0), true);
-            promoteToGPU(dot.HTMLElement);
-          }
-
-          const dotState = getElementState(position, dot.StartTime, dot.EndTime);
-          const dotPercentage = getProgressPercentage(position, dot.StartTime, dot.EndTime);
-
-          let targetScale, targetYOffset, targetGlow, targetOpacity;
-
-          if (dotState === "Active") {
-            targetScale = DotScaleSpline.at(dotPercentage);
-            targetYOffset = DotYOffsetSpline.at(dotPercentage);
-            targetGlow = DotGlowSpline.at(dotPercentage);
-            targetOpacity = DotOpacitySpline.at(dotPercentage);
-          } else if (dotState === "NotSung") {
-            targetScale = DotScaleSpline.at(0);
-            targetYOffset = DotYOffsetSpline.at(0);
-            targetGlow = DotGlowSpline.at(0);
-            targetOpacity = DotOpacitySpline.at(0);
-          } else {
-            // Sung
-            targetScale = DotScaleSpline.at(1);
-            targetYOffset = DotYOffsetSpline.at(1);
-            targetGlow = DotGlowSpline.at(1);
-            targetOpacity = DotOpacitySpline.at(1);
-          }
-
-          dot.AnimatorStore.Scale.SetGoal(targetScale);
-          dot.AnimatorStore.YOffset.SetGoal(targetYOffset);
-          dot.AnimatorStore.Glow.SetGoal(targetGlow);
-          dot.AnimatorStore.Opacity.SetGoal(targetOpacity);
-
-          const currentScale = dot.AnimatorStore.Scale.Step(deltaTime);
-          const currentYOffset = dot.AnimatorStore.YOffset.Step(deltaTime);
-          const currentGlow = dot.AnimatorStore.Glow.Step(deltaTime);
-          const currentOpacity = dot.AnimatorStore.Opacity.Step(deltaTime);
-
-          setStyleIfChanged(
-            dot.HTMLElement,
-            "transform",
-            `translate3d(0, calc(var(--DefaultLyricsSize) * ${currentYOffset ?? 0}), 0)`,
-            0.001
-          );
-          setStyleIfChanged(dot.HTMLElement, "scale", `${currentScale}`, 0.001);
-          setStyleIfChanged(dot.HTMLElement, "opacity", `${currentOpacity}`, 0.001);
-          setStyleIfChanged(
-            dot.HTMLElement,
-            "--text-shadow-blur-radius",
-            `${4 + 6 * currentGlow}px`,
-            0.5
-          );
-          setStyleIfChanged(
-            dot.HTMLElement,
-            "--text-shadow-opacity",
-            `${currentGlow * 20}%`,
-            1
-          );
+        if (!dot.AnimatorStore) {
+          dot.AnimatorStore = createDotSprings();
+          dot.AnimatorStore.Scale.SetGoal(DotScaleSpline.at(0), true);
+          dot.AnimatorStore.YOffset.SetGoal(DotYOffsetSpline.at(0), true);
+          dot.AnimatorStore.Glow.SetGoal(DotGlowSpline.at(0), true);
+          dot.AnimatorStore.Opacity.SetGoal(DotOpacitySpline.at(0), true);
+          promoteToGPU(dot.HTMLElement);
         }
+
+        const dotState = getElementState(position, dot.StartTime, dot.EndTime);
+        const dotPercentage = getProgressPercentage(position, dot.StartTime, dot.EndTime);
+
+        let targetScale, targetYOffset, targetGlow, targetOpacity;
+
+        if (dotState === "Active") {
+          targetScale = DotScaleSpline.at(dotPercentage);
+          targetYOffset = DotYOffsetSpline.at(dotPercentage);
+          targetGlow = DotGlowSpline.at(dotPercentage);
+          targetOpacity = DotOpacitySpline.at(dotPercentage);
+        } else if (dotState === "NotSung") {
+          targetScale = DotScaleSpline.at(0);
+          targetYOffset = DotYOffsetSpline.at(0);
+          targetGlow = DotGlowSpline.at(0);
+          targetOpacity = DotOpacitySpline.at(0);
+        } else {
+          // Sung
+          targetScale = DotScaleSpline.at(1);
+          targetYOffset = DotYOffsetSpline.at(1);
+          targetGlow = DotGlowSpline.at(1);
+          targetOpacity = DotOpacitySpline.at(1);
+        }
+
+        dot.AnimatorStore.Scale.SetGoal(targetScale);
+        dot.AnimatorStore.YOffset.SetGoal(targetYOffset);
+        dot.AnimatorStore.Glow.SetGoal(targetGlow);
+        dot.AnimatorStore.Opacity.SetGoal(targetOpacity);
+
+        const currentScale = dot.AnimatorStore.Scale.Step(deltaTime);
+        const currentYOffset = dot.AnimatorStore.YOffset.Step(deltaTime);
+        const currentGlow = dot.AnimatorStore.Glow.Step(deltaTime);
+        const currentOpacity = dot.AnimatorStore.Opacity.Step(deltaTime);
+
+        setStyleIfChanged(
+          dot.HTMLElement,
+          "transform",
+          `translate3d(0, calc(var(--DefaultLyricsSize) * ${currentYOffset ?? 0}), 0)`,
+          0.001
+        );
+        setStyleIfChanged(dot.HTMLElement, "scale", `${currentScale}`, 0.001);
+        setStyleIfChanged(dot.HTMLElement, "opacity", `${currentOpacity}`, 0.001);
+        setStyleIfChanged(
+          dot.HTMLElement,
+          "--text-shadow-blur-radius",
+          `${4 + 6 * currentGlow}px`,
+          0.5
+        );
+        setStyleIfChanged(
+          dot.HTMLElement,
+          "--text-shadow-opacity",
+          `${currentGlow * 20}%`,
+          1
+        );
       }
     }
   }

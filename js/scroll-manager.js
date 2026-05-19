@@ -72,11 +72,23 @@ const springState = {
 /**
  * Smoothly scroll an element into the center of the container using spring physics.
  */
+/**
+ * Computes the scroll offset of `element` relative to `container`.
+ * Uses getBoundingClientRect() so it works regardless of positioning context —
+ * the offsetParent chain approach fails on desktop when lyricsContent is not
+ * a positioned element and therefore never appears as an offsetParent.
+ */
+function getOffsetTopRelativeTo(element, container) {
+  const elementRect = element.getBoundingClientRect();
+  const containerRect = container.getBoundingClientRect();
+  return elementRect.top - containerRect.top + container.scrollTop;
+}
+
 function scrollIntoCenter(container, element, instant = false) {
   if (!container || !element) return;
 
   const containerHeight = container.clientHeight;
-  const elementOffsetTop = element.offsetTop;
+  const elementOffsetTop = getOffsetTopRelativeTo(element, container);
   const elementHeight = element.offsetHeight;
 
   const targetScroll = elementOffsetTop - (containerHeight / 2) + (elementHeight / 2);
@@ -152,14 +164,14 @@ function isElementInViewport(container, element) {
 /**
  * Scroll to the currently active line.
  */
-export function scrollToActiveLine(lyricsContent) {
-  if (forceScrollQueued) {
+export function scrollToActiveLine(lyricsContent, force = false) {
+  if (forceScrollQueued || force) {
     forceScrollQueued = false;
     userIsScrolling = false;
     const activeLine = lyricsContent.querySelector('.line.Active:not(.bg-line)');
     if (activeLine) {
       lastActiveElement = activeLine;
-      scrollIntoCenter(lyricsContent, activeLine, true);
+      scrollIntoCenter(lyricsContent, activeLine, force ? false : true);
     }
     return;
   }

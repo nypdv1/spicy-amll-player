@@ -31,10 +31,14 @@ function convertTime(t) {
  * Restricted to LTR languages and depends on character length vs duration.
  */
 function isLetterCapable(text, duration) {
+  // If the text contains spaces, it's a multi-word phrase, not a single capable syllable/word.
+  if (text.trim().includes(" ")) return false;
+
   const isSimpleMode = settingsManager.get("simpleLyricsMode");
   const letterLength = text.split("").length;
 
   if (isSimpleMode) return false; // FUCKKKK
+  if (settingsManager.get("swipeLyrics")) return false;
   
   if (isRtl(text)) return false;
 

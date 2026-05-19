@@ -89,13 +89,39 @@ function hasExplicitSpaceBeforeNextMeaningfulNode(nodes, index) {
   return false;
 }
 
+function hasSpaceBetween(node1, node2) {
+  let curr = node1.nextSibling;
+  while (curr && curr !== node2) {
+    if (curr.nodeType === Node.TEXT_NODE) {
+      if (/\s/.test(curr.textContent ?? "")) {
+        return true;
+      }
+    }
+    curr = curr.nextSibling;
+  }
+  return false;
+}
+
 function isPartOfWord(nodes, index) {
   const current = nodes[index];
   const next = getNextMeaningfulNode(nodes, index);
   if (!current || !next) return false;
-  const currentText = getNodeText(current).trim();
-  const nextText = getNodeText(next).trim();
+
+  const currentRawText = getNodeText(current);
+  const nextRawText = getNodeText(next);
+
+  // If the current node has a trailing space or the next node has a leading space, they are not part of the same word.
+  if (/\s$/.test(currentRawText) || /^\s/.test(nextRawText)) {
+    return false;
+  }
+
+  const currentText = currentRawText.trim();
+  const nextText = nextRawText.trim();
   if (!currentText || !nextText) return false;
+
+  // Check if there is any whitespace (space, newline, tab) between the original DOM nodes
+  if (hasSpaceBetween(current, next)) return false;
+
   if (hasExplicitSpaceBeforeNextMeaningfulNode(nodes, index)) return false;
   return true;
 }
@@ -258,7 +284,7 @@ function parseParagraph(paragraph, div, body, oppositeAgents, transliterations, 
 
   childNodes.forEach((node, index) => {
     if (node.nodeType === Node.TEXT_NODE) {
-      if ((node.textContent ?? "").trim()) plainNodes.push(node);
+      plainNodes.push(node);
       return;
     }
     if (node.nodeType !== Node.ELEMENT_NODE) return;

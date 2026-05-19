@@ -107,6 +107,7 @@
   cursor: pointer;
   font-weight: 700 !important;
   -webkit-text-fill-color: transparent;
+  -webkit-background-clip: text;
   background-clip: text;
   position: relative;
   will-change: transform, opacity;
@@ -609,17 +610,22 @@
     padding-bottom: 50vh;
   }
 
+  :root {
+    --SpicyLyrics-LineSpacing: 0.25cqw 0;
+  }
+
   #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
-    justify-content: center !important;
-    text-align: center !important;
-    padding: 10px 10px !important;
-    transform-origin: center center !important;
+    padding: 2px 10px !important;
+    transform-origin: left center !important;
     width: 100% !important;
   }
 
-  /* RTL specific centering on mobile */
+  #SpicyLyricsPage .LyricsContainer .LyricsContent .line.OppositeAligned {
+    transform-origin: right center !important;
+  }
+
+  /* RTL keeps its natural start alignment on mobile */
   #SpicyLyricsPage .LyricsContainer .LyricsContent .line.rtl {
-    justify-content: center !important;
-    text-align: center !important;
+    transform-origin: right center !important;
   }
 }
