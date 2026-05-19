@@ -4,6 +4,8 @@
  * Parses Apple Music-style TTML files into structured lyrics data.
  */
 
+import { settingsManager } from "./settings-manager.js";
+
 const WRITER_KEY_MATCH = /(songwriter|writers?|written[\s_-]*by|lyricist|composer)/i;
 const LEADING_BG_BRACKET = /^[([{]\s*/;
 const TRAILING_BG_BRACKET = /\s*[)\]}]$/;
@@ -209,8 +211,9 @@ function parseSyllableNodes(nodes, lineStart, lineEnd) {
 
     const startTime = parseTimestamp(getAttr(node, "begin")) ?? lineStart;
     const endTime = parseTimestamp(getAttr(node, "end")) ?? lineEnd;
+    const shouldTrim = settingsManager.get("trimSyllableSpaces");
     syllables.push({
-      Text: text.trim(),
+      Text: shouldTrim ? text.trim() : text,
       StartTime: startTime,
       EndTime: endTime,
       IsPartOfWord: isPartOfWord(nodes, index),
@@ -262,14 +265,16 @@ function parseParagraph(paragraph, div, body, oppositeAgents, transliterations, 
     if (node.tagName !== "span") { plainNodes.push(node); return; }
 
     const role = getAttr(node, "ttm:role", "role");
-    const text = node.textContent?.trim() ?? "";
+    const rawText = node.textContent ?? "";
+    const shouldTrim = settingsManager.get("trimSyllableSpaces");
+    const text = shouldTrim ? rawText.trim() : rawText;
 
     if (role === "x-translation") {
-      if (!leadTranslatedText && text) leadTranslatedText = text;
+      if (!leadTranslatedText && text) leadTranslatedText = text.trim();
       return;
     }
     if (role === "x-roman") {
-      if (!leadRomanizedText && text) leadRomanizedText = text;
+      if (!leadRomanizedText && text) leadRomanizedText = text.trim();
       return;
     }
     if (role === "x-bg") {

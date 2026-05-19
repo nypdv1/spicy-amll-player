@@ -38,15 +38,25 @@ export default class VideoExporter {
       await this.pipVideo.play();
 
       // 3. Request Tab Capture with Cursor Hidden
-      this.stream = await navigator.mediaDevices.getDisplayMedia({
+      const displayStream = await navigator.mediaDevices.getDisplayMedia({
         video: {
           displaySurface: "browser",
           frameRate: 60,
           cursor: "never" // Primary way to hide mouse from capture
         },
-        audio: true,
+        audio: false,
+        preferCurrentTab: true,
         selfBrowserSurface: "include"
       });
+
+      this.streamDest = this.audioPlayer.audioContext.createMediaStreamDestination();
+      this.audioPlayer.masterGain.connect(this.streamDest);
+      const audioStream = this.streamDest.stream;
+
+      this.stream = new MediaStream([
+        ...displayStream.getVideoTracks(),
+        ...audioStream.getAudioTracks()
+      ]);
 
       // 4. Request PiP Window (Needs to follow the selection gesture)
       try {
@@ -68,6 +78,13 @@ export default class VideoExporter {
         this.finishExport(metadata.title);
       };
 
+      this.pipVideo.onleavepictureinpicture = () => {
+        if (this.isRecording) this.stopExport();
+      };
+      this.stream.getVideoTracks()[0].onended = () => {
+        if (this.isRecording) this.stopExport();
+      };
+
       // UI & Starting
       this.audioPlayer.seek(0);
       this.chunks = [];
@@ -77,11 +94,6 @@ export default class VideoExporter {
       this.audioPlayer.play();
 
       this.monitorLoop();
-
-      this.stream.getVideoTracks()[0].onended = () => {
-        if (this.isRecording) this.stopExport();
-      };
-
     } catch (err) {
       console.error("Export failed:", err);
       this.stopExport();
@@ -141,6 +153,11 @@ export default class VideoExporter {
     this.isRecording = false;
     this.audioPlayer.pause();
     this.recorder.stop();
+
+    if (this.streamDest) {
+      this.audioPlayer.masterGain.disconnect(this.streamDest);
+      this.streamDest = null;
+    }
 
     if (this.stream) {
       this.stream.getTracks().forEach(track => track.stop());
