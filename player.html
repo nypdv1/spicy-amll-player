@@ -845,6 +845,9 @@
         if (lyricsIcon) {
           lyricsIcon.src = isHidden ? 'icons/lyrics.png' : 'icons/lyricson.png';
         }
+        if (!isHidden) {
+          queueForceScroll();
+        }
       };
     }
 
