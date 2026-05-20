@@ -86,7 +86,8 @@ class SettingsManager {
       dolbyAtmos: false,
       airPodsIcon: false,
       hideLyricsProvider: false,
-      eqGains: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+      eqGains: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      crossfadeDuration: 0
     };
 
     this.settings = { ...this.defaults };
@@ -221,6 +222,7 @@ class SettingsManager {
     if (window.spicyPlayer) {
       const p = window.spicyPlayer;
       this.settings.eqGains.forEach((g, i) => p.setEQGain(i, g));
+      p.crossfadeDuration = this.settings.crossfadeDuration ?? 0;
     }
 
     // Dispatch event for other modules (e.g., animated-art.js)

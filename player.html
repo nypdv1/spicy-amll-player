@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Spicy AMLL Player — Web Lyrics Player</title>
   <meta name="description" content="Play and experience synchronized Apple Music lyrics with beautiful animations and high-fidelity graphics on Spicy AMLL Player.">
 
@@ -44,68 +44,69 @@
             <div class="MediaImageContainer" id="album-art"></div>
           </div>
 
-          <div class="MetadataRow">
-            <div class="Metadata" id="metadata">
-              <div class="SongName" id="song-name"><span>Loading...</span></div>
-              <div class="Artists" id="artists">—</div>
+          <div class="NowBarBottomWrapper">
+            <div class="MetadataRow">
+              <div class="Metadata" id="metadata">
+                <div class="SongName" id="song-name"><span>Loading...</span></div>
+                <div class="Artists" id="artists">—</div>
+              </div>
+              <div class="MetadataActions">
+                <button class="favorite-button" id="btn-favorite" title="Favorite">
+                  <img src="icons/favorite.png" alt="Favorite" id="favorite-icon" width="32" height="32">
+                </button>
+                <button class="options-button" id="btn-options">
+                  <img src="icons/settings.png" id="setting-icon" alt="Settings" width="32" height="32">
+                </button>
+              </div>
             </div>
-            <div class="MetadataActions">
-              <button class="favorite-button" id="btn-favorite" title="Favorite">
-                <img src="icons/favorite.png" alt="Favorite" id="favorite-icon" width="32" height="32">
-              </button>
-              <button class="options-button" id="btn-options">
-                <img src="icons/settings.png" id="setting-icon" alt="Settings" width="32" height="32">
-              </button>
+
+            <!-- Integrated Progress Bar -->
+            <div class="NowBarProgress">
+              <div class="progress-bar-wrapper" id="progress-bar">
+                <div class="progress-bar-fill" id="progress-fill"></div>
+              </div>
+              <div class="progress-times">
+                <span class="progress-time" id="time-current">0:00</span>
+                <span class="progress-time" id="time-total">-0:00</span>
+              </div>
+            </div>
+
+            <!-- Quality Badge -->
+            <div class="quality-badge-container">
+              <div class="quality-badge" id="quality-badge">
+                <img src="icons/lossless.png" alt="Lossless" id="quality-badge-icon" style="width: 17px; height: 14px; margin-right: 4px;">
+                <span id="quality-badge-text">Lossless</span>
+              </div>
+            </div>
+
+            <!-- Integrated Playback Controls -->
+            <div class="NowBarControls">
+              <div class="playback-control shuffle" id="btn-shuffle" title="Shuffle">
+                <img src="icons/button_icon_shuffle.png" alt="Shuffle" id="shuffle-icon">
+              </div>
+              <div class="playback-control skip-back" id="btn-backward" title="Previous">
+                <img src="icons/rewind.png" alt="Previous">
+              </div>
+              <div class="playback-control play-pause" id="btn-play-pause" title="Play/Pause">
+                <img src="icons/paused.png" alt="Play" id="play-pause-icon">
+              </div>
+              <div class="playback-control skip-forward" id="skip-forward" title="Next">
+                <img src="icons/forward.png" alt="Next">
+              </div>
+              <div class="playback-control repeat" id="btn-repeat" title="Repeat">
+                <img src="icons/repeat.svg" alt="Repeat" id="repeat-icon">
+              </div>
+            </div>
+
+            <!-- Volume Area -->
+            <div class="VolumeArea">
+              <img src="icons/volume_low.png" class="volume-side-icon" alt="Volume Low">
+              <div class="volume-slider-wrapper">
+                <input type="range" class="volume-slider" id="volume-slider" min="0" max="1" step="0.01" value="1">
+              </div>
+              <img src="icons/volume_full.png" class="volume-side-icon" alt="Volume High">
             </div>
           </div>
-
-          <!-- Integrated Progress Bar -->
-          <div class="NowBarProgress">
-            <div class="progress-bar-wrapper" id="progress-bar">
-              <div class="progress-bar-fill" id="progress-fill"></div>
-            </div>
-            <div class="progress-times">
-              <span class="progress-time" id="time-current">0:00</span>
-              <span class="progress-time" id="time-total">-0:00</span>
-            </div>
-          </div>
-
-          <!-- Quality Badge -->
-          <div class="quality-badge-container">
-            <div class="quality-badge" id="quality-badge">
-              <img src="icons/lossless.png" alt="Lossless" id="quality-badge-icon" style="width: 17px; height: 14px; margin-right: 4px;">
-              <span id="quality-badge-text">Lossless</span>
-            </div>
-          </div>
-
-          <!-- Integrated Playback Controls -->
-          <div class="NowBarControls">
-            <div class="playback-control shuffle" id="btn-shuffle" title="Shuffle">
-              <img src="icons/button_icon_shuffle.png" alt="Shuffle" id="shuffle-icon">
-            </div>
-            <div class="playback-control skip-back" id="btn-backward" title="Previous">
-              <img src="icons/rewind.png" alt="Previous">
-            </div>
-            <div class="playback-control play-pause" id="btn-play-pause" title="Play/Pause">
-              <img src="icons/paused.png" alt="Play" id="play-pause-icon">
-            </div>
-            <div class="playback-control skip-forward" id="skip-forward" title="Next">
-              <img src="icons/forward.png" alt="Next">
-            </div>
-            <div class="playback-control repeat" id="btn-repeat" title="Repeat">
-              <img src="icons/repeat.svg" alt="Repeat" id="repeat-icon">
-            </div>
-          </div>
-
-          <!-- Volume Area -->
-          <div class="VolumeArea">
-            <img src="icons/volume_low.png" class="volume-side-icon" alt="Volume Low">
-            <div class="volume-slider-wrapper">
-              <input type="range" class="volume-slider" id="volume-slider" min="0" max="1" step="0.01" value="1">
-            </div>
-            <img src="icons/volume_full.png" class="volume-side-icon" alt="Volume High">
-          </div>
-
 
         </div>
       </div>
@@ -153,7 +154,7 @@
     import { 
       hasPlayerData, getQueue, getTrackData, getCurrentIndex, setCurrentIndex, 
       addTrackToQueue, updateQueueOrder, getTTMLContent, getAudioBlobUrl, getAudioName, isAutoFetchMode, goToUpload,
-      updateTrackAmTrackId
+      updateTrackAmTrackId, getPlaylists, createPlaylist, addTrackToPlaylist, findTrackInPlaylist, removeTrackFromPlaylist
     } from './js/router.js';
     import parseTTMLToLyrics, { parseSongwriterString } from './js/ttml-parser.js';
     import { applySyllableLyrics, applyLineLyrics, applyStaticLyrics, LyricsObject, convertToSyllable } from './js/lyrics-applyer.js';
@@ -211,9 +212,9 @@
     const btnTranslation = document.getElementById('btn-translation');
 
     // ── State ──
-    settingsManager.apply();
     const player = new AudioPlayer();
     window.spicyPlayer = player;
+    settingsManager.apply();
 
     const mediaSessionManager = new MediaSessionManager(
       player,
@@ -247,14 +248,7 @@
     }
 
     function showGlobalLoader() {
-      const globalLoader = document.createElement('div');
-      globalLoader.className = 'SpicyLoader active';
-      globalLoader.innerHTML = '<div class="SlBounceLoader"></div>';
-      document.body.appendChild(globalLoader);
-      setTimeout(() => {
-        globalLoader.classList.remove('active');
-        setTimeout(() => globalLoader.remove(), 400);
-      }, 1500);
+      showTrackLoader();
     }
 
     async function refreshQueue() {
@@ -341,9 +335,33 @@
       }, { offset: Number.NEGATIVE_INFINITY }).element;
     }
 
-    async function loadTrack(index) {
+    let _currentLoader = null;
+
+    function showTrackLoader() {
+      if (_currentLoader) return;
+      const loader = document.createElement('div');
+      loader.className = 'SpicyLoader active';
+      loader.innerHTML = '<div class="SlBounceLoader"></div>';
+      document.body.appendChild(loader);
+      _currentLoader = loader;
+    }
+
+    function hideTrackLoader() {
+      if (!_currentLoader) return;
+      _currentLoader.classList.remove('active');
+      setTimeout(() => {
+        if (_currentLoader && _currentLoader.parentNode) {
+          _currentLoader.parentNode.removeChild(_currentLoader);
+        }
+        _currentLoader = null;
+      }, 400);
+    }
+
+    async function loadTrack(index, isCrossfade = false) {
       if (index < 0 || index >= currentQueue.length) return;
       
+      showTrackLoader();
+
       const contentBox = document.querySelector('.ContentBox');
       if (contentBox) contentBox.style.opacity = '0';
       
@@ -351,10 +369,57 @@
       await new Promise(r => setTimeout(r, 340));
 
       setCurrentIndex(index);
-      const track = await getTrackData(currentQueue[index].id);
+      let track = await getTrackData(currentQueue[index].id);
       if (!track) {
+        hideTrackLoader();
         if (contentBox) contentBox.style.opacity = '1';
         return;
+      }
+
+      function isMP4Buffer(buf) {
+        const view = new DataView(buf);
+        if (view.byteLength < 8) return false;
+        return (
+          view.getUint8(4) === 0x66 && // f
+          view.getUint8(5) === 0x74 && // t
+          view.getUint8(6) === 0x79 && // y
+          view.getUint8(7) === 0x70    // p
+        );
+      }
+
+      if (!track.buffer && track.amTrackId) {
+        showNotice('⬇️ Streaming track...');
+        try {
+          const audioUrl = `https://api.spicyamll.online/download?song=${track.amTrackId}`;
+          const response = await fetch(audioUrl);
+          if (!response.ok) throw new Error("HTTP " + response.status);
+          const buf = await response.arrayBuffer();
+
+          // Open DB and save the buffer to cache it
+          const db = await new Promise((res, rej) => {
+            const req = indexedDB.open('SpicyLyricsDB');
+            req.onsuccess = (e) => res(e.target.result);
+            req.onerror = (e) => rej(e.target.error);
+          });
+          await new Promise((res, rej) => {
+            const tx = db.transaction('buffers', 'readwrite');
+            const req = tx.objectStore('buffers').put(buf, track.id);
+            req.onsuccess = () => res();
+            req.onerror = () => rej(req.error);
+          });
+
+          track.buffer = buf;
+          track.type = isMP4Buffer(buf) ? 'audio/mp4' : 'audio/mpeg';
+        } catch (e) {
+          console.error("Failed to stream track:", e);
+          hideTrackLoader();
+          showNotice("❌ Streaming failed: " + e.message);
+          setTimeout(() => {
+            const next = getCurrentIndex() + 1;
+            if (next < currentQueue.length) loadTrack(next);
+          }, 2000);
+          return;
+        }
       }
 
       // Reset UI
@@ -378,6 +443,7 @@
           timeTotal.textContent = AudioPlayer.formatTime(duration, true);
           songMetadata = await parseAudioMetadata(track.buffer, track.name);
           updateMetadataUI(songMetadata);
+          fetchAnimatedArt(songMetadata.artist, songMetadata.album, songMetadata.title);
 
           if (!songMetadata.title) {
             songNameEl.querySelector('span').textContent = track.name.replace(/\.[^.]+$/, '');
@@ -426,7 +492,9 @@
           refreshQueue();
           queueForceScroll();
           
+          hideTrackLoader();
           if (contentBox) contentBox.style.opacity = '1';
+          preloadNextTrack();
       };
 
       return new Promise((resolve) => {
@@ -434,8 +502,45 @@
           await processMetadata(duration);
           resolve();
         };
-        player.setSource(url);
+        if (isCrossfade) {
+          player.transitionTo(url, player.crossfadeDuration);
+        } else {
+          player.setSource(url);
+        }
       });
+    }
+
+    async function preloadNextTrack() {
+      const nextIdx = getCurrentIndex() + 1;
+      if (nextIdx < 0 || nextIdx >= currentQueue.length) return;
+
+      try {
+        const nextTrack = await getTrackData(currentQueue[nextIdx].id);
+        if (!nextTrack) return;
+
+        if (!nextTrack.buffer && nextTrack.amTrackId) {
+          console.log(`[Preloader] Preloading next track in queue: ${nextTrack.name}`);
+          const audioUrl = `https://api.spicyamll.online/download?song=${nextTrack.amTrackId}`;
+          const response = await fetch(audioUrl);
+          if (!response.ok) throw new Error("HTTP " + response.status);
+          const buf = await response.arrayBuffer();
+
+          const db = await new Promise((res, rej) => {
+            const req = indexedDB.open('SpicyLyricsDB');
+            req.onsuccess = (e) => res(e.target.result);
+            req.onerror = (e) => rej(e.target.error);
+          });
+          await new Promise((res, rej) => {
+            const tx = db.transaction('buffers', 'readwrite');
+            const req = tx.objectStore('buffers').put(buf, nextTrack.id);
+            req.onsuccess = () => res();
+            req.onerror = () => rej(req.error);
+          });
+          console.log(`[Preloader] Preloaded and cached: ${nextTrack.name}`);
+        }
+      } catch (e) {
+        console.warn("[Preloader] Preload failed:", e);
+      }
     }
 
     function updateMetadataUI(metadata) {
@@ -467,10 +572,6 @@
       } else {
         applyDefaultBackground(dynamicBg);
         albumArt.style.backgroundImage = 'none';
-      }
-
-      if (metadata.artist) {
-        fetchAnimatedArt(metadata.artist, metadata.album, metadata.title);
       }
 
       mediaSessionManager.updateMetadata(metadata.title, metadata.artist, metadata.album, metadata.artUrl);
@@ -701,6 +802,15 @@
       timeTotal.textContent = AudioPlayer.formatTime(duration, true);
     };
 
+    player.onCrossfadeTrigger = () => {
+      const nextIdx = getCurrentIndex() + 1;
+      if (nextIdx < currentQueue.length) {
+        loadTrack(nextIdx, true);
+      } else if (player.repeatMode === 1) { // Repeat All
+        loadTrack(0, true);
+      }
+    };
+
     player.onEnded = () => {
       const nextIdx = getCurrentIndex() + 1;
       if (nextIdx < currentQueue.length) {
@@ -855,15 +965,88 @@
     const btnFavorite = document.getElementById('btn-favorite');
     const favoriteIcon = document.getElementById('favorite-icon');
     
-    if (btnFavorite) {
-      btnFavorite.onclick = () => {
-        const isFavorited = btnFavorite.classList.toggle('active');
-        if (favoriteIcon) {
-          favoriteIcon.src = isFavorited ? 'icons/favorited.png' : 'icons/favorite.png';
+    // Check initial favorite status
+    async function checkFavoriteStatus() {
+      if (!btnFavorite) return;
+      try {
+        const queue = await getQueue();
+        const currentTrack = queue[getCurrentIndex()];
+        if (!currentTrack) return;
+        
+        const playlists = await getPlaylists();
+        const favPlaylist = playlists.find(p => p.name === 'Favorites');
+        if (favPlaylist) {
+          const isFav = await findTrackInPlaylist(favPlaylist.id, currentTrack.amTrackId, currentTrack.name, currentTrack.artist);
+          if (isFav) {
+            btnFavorite.classList.add('active');
+            if (favoriteIcon) favoriteIcon.src = 'icons/favorited.png';
+          } else {
+            btnFavorite.classList.remove('active');
+            if (favoriteIcon) favoriteIcon.src = 'icons/favorite.png';
+          }
         }
-        // Show popup (same as AirPlay)
-        if (airplayPopup) {
-          airplayPopup.style.display = 'flex';
+      } catch (e) {
+        console.error("Failed to check favorite status:", e);
+      }
+    }
+    
+    // Run on load
+    checkFavoriteStatus();
+    
+    if (btnFavorite) {
+      btnFavorite.onclick = async () => {
+        try {
+          const queue = await getQueue();
+          const currentTrack = queue[getCurrentIndex()];
+          if (!currentTrack) return;
+          
+          let playlists = await getPlaylists();
+          let favPlaylist = playlists.find(p => p.name === 'Favorites');
+          if (!favPlaylist) {
+            const id = await createPlaylist('Favorites');
+            favPlaylist = { id, name: 'Favorites' };
+          }
+          
+          const isFav = await findTrackInPlaylist(favPlaylist.id, currentTrack.amTrackId, currentTrack.name, currentTrack.artist);
+          
+          if (isFav) {
+            // UN-FAVORITE
+            await removeTrackFromPlaylist(isFav.id);
+            btnFavorite.classList.remove('active');
+            if (favoriteIcon) favoriteIcon.src = 'icons/favorite.png';
+            
+            const toast = document.getElementById('spicy-toast');
+            if (toast) {
+              toast.querySelector('.toast-text').textContent = 'Removed from Favorites';
+              toast.classList.add('show');
+              setTimeout(() => toast.classList.remove('show'), 2000);
+            }
+          } else {
+            // FAVORITE
+            const trackData = await getTrackData(currentTrack.id);
+            if (!trackData) return;
+            
+            await addTrackToPlaylist(favPlaylist.id, {
+               name: trackData.name,
+               artist: trackData.artist,
+               artUrl: trackData.artUrl,
+               type: trackData.type,
+               ttml: trackData.ttml,
+               amTrackId: trackData.amTrackId
+            }, trackData.buffer);
+  
+            btnFavorite.classList.add('active');
+            if (favoriteIcon) favoriteIcon.src = 'icons/favorited.png';
+            
+            const toast = document.getElementById('spicy-toast');
+            if (toast) {
+              toast.querySelector('.toast-text').textContent = 'Added to Favorites!';
+              toast.classList.add('show');
+              setTimeout(() => toast.classList.remove('show'), 2000);
+            }
+          }
+        } catch (e) {
+          console.error("Failed to toggle favorite:", e);
         }
       };
     }
@@ -1004,7 +1187,10 @@
     function startAnimationLoop() {
       function loop() {
         const pos = isDraggingProgress ? dragPosition : player.getPosition();
-        setLyricsTime(pos, lyricsType);
+        // Use latency-compensated position for lyrics so they sync to when audio is heard,
+        // not when it's scheduled into the Web Audio pipeline (~200–300ms earlier).
+        const lyricsPos = isDraggingProgress ? dragPosition : player.getLatencyCompensatedPosition();
+        setLyricsTime(lyricsPos, lyricsType);
         if (!document.hidden) {
           if (player.duration > 0 && !isDraggingProgress) {
             progressFill.style.width = `${Math.min((pos / player.duration) * 100, 100)}%`;
@@ -1013,10 +1199,10 @@
           if (!isDraggingProgress) {
             timeCurrent.textContent = AudioPlayer.formatTime(pos);
           }
-          animateLyrics(pos, lyricsType, false);
+          animateLyrics(lyricsPos, lyricsType, false);
           scrollToActiveLine(lyricsContent, isDraggingProgress);
         } else {
-          animateLyrics(pos, lyricsType, true);
+          animateLyrics(lyricsPos, lyricsType, true);
         }
         animationFrameId = requestAnimationFrame(loop);
       }

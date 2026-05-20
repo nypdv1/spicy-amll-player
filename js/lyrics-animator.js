@@ -312,7 +312,7 @@ function animateSyllable(position, deltaTime) {
   let activeIdx = -1;
   for (let i = 0; i < arr.length; i++) {
     const line = arr[i];
-    const status = line.Status || (position >= line.StartTime && position <= line.EndTime + 300 ? "Active" : (position > line.EndTime + 300 ? "Sung" : "NotSung"));
+    const status = line.Status || (position >= line.StartTime && position <= line.EndTime ? "Active" : (position > line.EndTime ? "Sung" : "NotSung"));
     const isAct = status === "Active";
 
     if (line._lastAppliedStatus !== status) {
@@ -391,7 +391,7 @@ function animateSyllable(position, deltaTime) {
     const lineActive = position >= line.StartTime && position <= line.EndTime;
     const lineSung = position > line.EndTime;
 
-    if (line.IsConvertedLine || line.HTMLElement.parentElement?.classList.contains("is-converted-line")) {
+    if ((line.IsConvertedLine || line.HTMLElement.parentElement?.classList.contains("is-converted-line")) && !line.DotLine) {
       if (line.Syllables?.Lead) {
         for (let wi = 0; wi < line.Syllables.Lead.length; wi++) {
           const word = line.Syllables.Lead[wi];
@@ -705,8 +705,8 @@ function animateLine(position, deltaTime) {
   let activeIdx = -1;
   for (let i = 0; i < arr.length; i++) {
     const line = arr[i];
-    const isAct = position >= line.StartTime && position <= line.EndTime + 300;
-    const isSung = position > line.EndTime + 300;
+    const isAct = position >= line.StartTime && position <= line.EndTime;
+    const isSung = position > line.EndTime;
     const status = isAct ? "Active" : (isSung ? "Sung" : "NotSung");
 
     if (line._lastAppliedStatus !== status) {

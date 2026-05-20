@@ -110,3 +110,13 @@ export function weebify(text) {
   const suffix = WeebSuffixes[Math.floor(Math.random() * WeebSuffixes.length)];
   return res + suffix;
 }
+
+export function uppercase(text) {
+  if (!text) return text;
+  return text.toUpperCase();
+}
+
+export function lowercase(text) {
+  if (!text) return text;
+  return text.toLowerCase();
+}

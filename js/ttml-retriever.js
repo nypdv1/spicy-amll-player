@@ -224,24 +224,34 @@ async function fetchFromNetease(songName, artistName) {
 // ═══════════════════════════════════════════════
 
 async function fetchFromLRCLIB(songName, artistName, albumName, durationSec) {
-  try {
-    const params = new URLSearchParams({
-      track_name: songName,
-      artist_name: artistName,
-      album_name: albumName || '',
-      duration: String(Math.round(durationSec)),
-    });
+  const tryFetch = async (album) => {
+    try {
+      const params = new URLSearchParams({
+        track_name: songName,
+        artist_name: artistName,
+        duration: String(Math.round(durationSec)),
+      });
+      if (album) params.append('album_name', album);
 
-    const res = await fetch(`https://lrclib.net/api/get?${params}`, {
-      headers: { 'x-user-agent': 'spicy-amll-player/1.0' },
-    });
+      const res = await fetch(`https://lrclib.net/api/get?${params}`, {
+        headers: { 'x-user-agent': 'spicy-amll-player/1.0' },
+      });
 
-    if (!res.ok) return null;
-    const body = await res.json();
-    return processLRCLIBResponse(body, durationSec * 1000);
-  } catch (err) {
-    return null;
+      if (!res.ok) return null;
+      const body = await res.json();
+      return processLRCLIBResponse(body, durationSec * 1000);
+    } catch (err) {
+      return null;
+    }
+  };
+
+  let result = await tryFetch(albumName);
+  if (!result && albumName) {
+    console.log(`[TTMLRetriever] LRCLIB: Not found with album "${albumName}", retrying without album...`);
+    result = await tryFetch(null);
   }
+  
+  return result;
 }
 
 function processLRCLIBResponse(body, durationMs) {
@@ -307,7 +317,7 @@ async function fetchFromLyricsPlus(songName, artistName, albumName, durationSec)
       if (albumName) params.append('album', albumName);
       if (durationSec) params.append('duration', String(Math.round(durationSec)));
 
-      const res = await fetch(`https://lyricsplus.prjktla.workers.dev/v2/lyrics/get?${params}`, {
+      const res = await fetch(`https://lyrics.geeked.wtf/v2/lyrics/get?${params}`, {
         headers: {
           'User-Agent': 'spicy-amll-player/1.0'
         }
@@ -316,6 +326,14 @@ async function fetchFromLyricsPlus(songName, artistName, albumName, durationSec)
       if (!res.ok) return null;
       const data = await res.json();
       console.log('[TTMLRetriever] LyricsPlus raw data:', data);
+
+      const isMusixmatch = data.source === "Musixmatch" || data.provider === "Musixmatch" || data.metadata?.provider === "Musixmatch";
+      const ignoreWordSync = settingsManager.get("ignoreMusixmatchWordSync");
+      
+      if (data.type === "Word" && isMusixmatch && ignoreWordSync) {
+        console.log('[TTMLRetriever] LyricsPlus: Downgrading Musixmatch Word sync to Line sync due to user settings.');
+        data.type = "Line";
+      }
 
       // Handle word/syllable-level sync (type: "Word")
       if (data.type === "Word" && data.lyrics && Array.isArray(data.lyrics)) {
@@ -429,8 +447,8 @@ function convertLyricsPlusWordSync(data) {
 
   const content = lines.map(line => {
     // Convert times from milliseconds to seconds for player format
-    const startTime = Math.max(0, (line.time / 1000) - 0.2);
-    const endTime = Math.max(0, ((line.time + line.duration) / 1000) - 0.2);
+    const startTime = Math.max(0, line.time / 1000);
+    const endTime = Math.max(0, (line.time + line.duration) / 1000);
 
     // Separate lead and background syllables
     const leadSyllables = [];
@@ -469,8 +487,8 @@ function convertLyricsPlusWordSync(data) {
       
       const syllableObj = {
         Text: sylTrimmed,
-        StartTime: Math.max(0, (syl.time / 1000) - 0.2),
-        EndTime: Math.max(0, ((syl.time + syl.duration) / 1000) - 0.2),
+        StartTime: Math.max(0, syl.time / 1000),
+        EndTime: Math.max(0, (syl.time + syl.duration) / 1000),
         IsPartOfWord: isPartOfWord
       };
 
@@ -566,8 +584,8 @@ function convertLyricsPlusLineSync(data) {
 
   const content = lines.map(line => {
     // Convert times from milliseconds to seconds for player format
-    const startTime = Math.max(0, (line.time / 1000) - 0.2);
-    const endTime = Math.max(0, ((line.time + line.duration) / 1000) - 0.2);
+    const startTime = Math.max(0, line.time / 1000);
+    const endTime = Math.max(0, (line.time + line.duration) / 1000);
 
     // Determine agent ID for this line (duet support)
     const singerAlias = line.element?.singer;
@@ -750,41 +768,47 @@ export async function retrieveTTML(songName, artistName, albumName, durationSec 
 
   const finalSongId = songId || await searchAppleTrackId(songName, artistName, albumName);
 
+  // 1. Fire all provider requests simultaneously in the background (Parallel Search)
+  const providerPromises = {};
   for (const providerId of activeOrder) {
-    console.log(`[TTMLRetriever] Attempting ${providerId}...`);
-    let result = null;
+    providerPromises[providerId] = (async () => {
+      try {
+        if (providerId === "spicy" || providerId === "genius") return null;
+        if (providerId === "apple" || providerId === "aml") return await fetchFromAppleMusic(songName, artistName, albumName, finalSongId);
+        if (providerId === "musixmatch") return await fetchFromMusixmatch(songName, artistName, albumName, durationSec * 1000);
+        if (providerId === "netease") return await fetchFromNetease(songName, artistName);
+        if (providerId === "lrclib") return await fetchFromLRCLIB(songName, artistName, albumName, durationSec);
+        if (providerId === "lyricsplus") return await fetchFromLyricsPlus(songName, artistName, albumName, durationSec);
+        if (providerId === "custom") return finalSongId ? await fetchFromCustomAPI(finalSongId) : null;
+      } catch (e) {
+        console.warn(`[TTMLRetriever] ${providerId} failed in parallel fetch:`, e);
+      }
+      return null;
+    })();
+  }
 
-    try {
-      if (providerId === "spicy" || providerId === "genius") {
-        // [DISABLED] These providers are currently unavailable or disabled by the developer.
-        // Skipping at the code level to avoid unnecessary requests/failures without clearing user settings.
-        console.log(`[TTMLRetriever] ⏭ Skipping ${providerId} (disabled/unavailable)`);
+  let staticFallback = null;
+
+  // 2. Resolve them strictly in priority order
+  for (const providerId of activeOrder) {
+    console.log(`[TTMLRetriever] Checking parallel result for ${providerId}...`);
+    const result = await providerPromises[providerId];
+
+    if (result) {
+      if (result.lyricsData?.Type === 'Static') {
+        console.log(`[TTMLRetriever] ✓ Found static lyrics via ${providerId}, keeping as fallback...`);
+        if (!staticFallback) staticFallback = { ...result, songId: finalSongId };
         continue;
-      } else if (providerId === "apple" || providerId === "aml") {
-        result = await fetchFromAppleMusic(songName, artistName, albumName, finalSongId);
-      } else if (providerId === "musixmatch") {
-        result = await fetchFromMusixmatch(songName, artistName, albumName, durationSec * 1000);
-      } else if (providerId === "netease") {
-        result = await fetchFromNetease(songName, artistName);
-      } else if (providerId === "lrclib") {
-        result = await fetchFromLRCLIB(songName, artistName, albumName, durationSec);
-      } else if (providerId === "lyricsplus") {
-        result = await fetchFromLyricsPlus(songName, artistName, albumName, durationSec);
-      } else if (providerId === "custom") {
-        if (finalSongId) {
-          result = await fetchFromCustomAPI(finalSongId);
-        } else {
-          console.log(`[TTMLRetriever] Skipping custom API (no songId)`);
-        }
       }
-
-      if (result) {
-        console.log(`[TTMLRetriever] ✓ Found lyrics via ${providerId}`);
-        return { ...result, songId: finalSongId };
-      }
-    } catch (e) {
-      console.warn(`[TTMLRetriever] ${providerId} failed:`, e);
+      
+      console.log(`[TTMLRetriever] ✓ Found synced lyrics via ${providerId}`);
+      return { ...result, songId: finalSongId };
     }
+  }
+
+  if (staticFallback) {
+    console.log(`[TTMLRetriever] ✗ No synced lyrics found, falling back to static lyrics from ${staticFallback.source}`);
+    return staticFallback;
   }
 
   console.log('[TTMLRetriever] ✗ No lyrics found from any source');

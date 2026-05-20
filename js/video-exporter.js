@@ -97,6 +97,7 @@ export default class VideoExporter {
     } catch (err) {
       console.error("Export failed:", err);
       this.stopExport();
+      document.body.classList.remove('is-rendering');
       alert("Capture was cancelled or failed.");
     }
   }

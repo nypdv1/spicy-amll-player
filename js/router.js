@@ -72,7 +72,9 @@ export async function addTrackToQueue(buffer, metadata) {
 
     addRequest.onsuccess = (e) => {
       const id = e.target.result;
-      bufferStore.put(buffer, id);
+      if (buffer) {
+        bufferStore.put(buffer, id);
+      }
     };
 
     tx.oncomplete = () => resolve(addRequest.result);
@@ -305,6 +307,24 @@ export async function getPlaylistTracks(playlistId) {
     const index = tx.objectStore('playlist_tracks').index('playlistId');
     const request = index.getAll(IDBKeyRange.only(playlistId));
     request.onsuccess = () => resolve(request.result || []);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+export async function findTrackInPlaylist(playlistId, amTrackId, name, artist) {
+  const tracks = await getPlaylistTracks(playlistId);
+  return tracks.find(t => 
+    (amTrackId && t.amTrackId == amTrackId) || 
+    (t.name === name && t.artist === artist)
+  );
+}
+
+export async function removeTrackFromPlaylist(playlistTrackId) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('playlist_tracks', 'readwrite');
+    const request = tx.objectStore('playlist_tracks').delete(playlistTrackId);
+    request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error);
   });
 }

@@ -6,7 +6,7 @@
 
 import isRtl from './is-rtl.js';
 import { settingsManager } from './settings-manager.js';
-import { gibberishify, weebify } from './text-transformers.js';
+import { gibberishify, weebify, uppercase, lowercase } from './text-transformers.js';
 
 const LYRICS_BETWEEN_SHOW = 3;
 const INTERLUDE_EARLIER_BY = 0;
@@ -16,6 +16,8 @@ function transformText(text) {
   const format = settingsManager.get("memeFormat");
   if (format === "Gibberish (Wenomechainsama)") return gibberishify(text);
   if (format === "Weeb (・`ω´・)") return weebify(text);
+  if (format === "UPPERCASE") return uppercase(text);
+  if (format === "lowercase") return lowercase(text);
   return text;
 }
 

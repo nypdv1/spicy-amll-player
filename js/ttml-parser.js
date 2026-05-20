@@ -502,6 +502,9 @@ export default function parseTTMLToLyrics(ttml) {
   const songwriters = parseSongwriters(tt);
   const oppositeAgents = parseAgents(tt);
   const { translations, transliterations, transliterationPieces } = readITunesMetadata(tt);
+  
+  // Explicitly check if the provider marked this as static/unsynced
+  const isExplicitlyStatic = getAttr(tt, "itunes:timing", "timing") === "None";
 
   const body = Array.from(tt.children).find(c => c.tagName === "body");
   if (!body) throw new Error("Invalid TTML: missing <body>");
@@ -533,8 +536,10 @@ export default function parseTTMLToLyrics(ttml) {
   const hasSyllableTimings = parsedLines.some(l => l.leadSyllables.length > 0 || l.background.length > 0);
   const hasLineTimings = parsedLines.some(l => l.startTime > 0 || l.endTime > 0);
 
-  if (hasSyllableTimings) return buildSyllableLyrics(parsedLines, songwriters);
-  if (hasLineTimings) return buildLineLyrics(parsedLines, songwriters);
+  if (!isExplicitlyStatic) {
+    if (hasSyllableTimings) return buildSyllableLyrics(parsedLines, songwriters);
+    if (hasLineTimings) return buildLineLyrics(parsedLines, songwriters);
+  }
   return buildStaticLyrics(parsedLines, songwriters);
 }
 

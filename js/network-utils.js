@@ -4,7 +4,7 @@
  */
 
 const PROXIES = [
-  (url) => `https://proxy.corsfix.com/?${encodeURIComponent(url)}`,
+  (url) => `https://proxy.corsfix.com/?${url}`,
   (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
   (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
   (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,

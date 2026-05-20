@@ -946,6 +946,60 @@ body.is-rendering .NowBar {
   outline: none;
 }
 
+.sl-slider-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 160px;
+}
+
+.sl-slider-value {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  min-width: 32px;
+  text-align: right;
+}
+
+.sl-range-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 120px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  outline: none;
+  cursor: pointer;
+}
+
+.sl-range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  transition: transform 0.1s ease;
+}
+
+.sl-range-slider::-webkit-slider-thumb:active {
+  transform: scale(1.2);
+}
+
+.sl-range-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: none;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  transition: transform 0.1s ease;
+}
+
+.sl-range-slider::-moz-range-thumb:active {
+  transform: scale(1.2);
+}
+
 .sl-btn {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1106,7 +1160,7 @@ body.is-rendering .NowBar {
 /* ── Lyrics Source Badge ── */
 .lyrics-source-badge {
   position: fixed;
-  top: 24px;
+  top: 29px;
   right: 24px;
   color: rgba(255, 255, 255, 0.4);
   font-size: 0.75rem;
@@ -1146,6 +1200,12 @@ body.is-rendering .NowBar {
     height: 40px !important;
     margin: 0 !important;
     opacity: 0.8 !important;
+  }
+
+  .lyrics-source-badge {
+    position: absolute !important;
+    top: calc(env(safe-area-inset-top, 12px) + 13px) !important;
+    right: 24px !important;
   }
 
   #SpicyLyricsPage .ContentBox .NowBar {
@@ -1230,7 +1290,8 @@ body.is-rendering .NowBar {
   }
 
   .favorite-button {
-    display: none !important; /* Hide favorite button on mobile to place settings button at the complete right */
+    display: none !important;
+    /* Hide favorite button on mobile to place settings button at the complete right */
   }
 
   .options-button img {
@@ -1241,28 +1302,49 @@ body.is-rendering .NowBar {
   /* 2. Lyrics Container in Middle */
   #SpicyLyricsPage .LyricsContainer {
     position: absolute !important;
+    display: block !important;
     top: calc(112px + env(safe-area-inset-top, 12px)) !important;
+    bottom: 32vh !important;
     bottom: 32dvh !important;
     left: 0 !important;
     width: 100% !important;
-    height: auto !important;
+    height: calc(100vh - (112px + env(safe-area-inset-top, 12px) + 32vh)) !important;
+    height: calc(100dvh - (112px + env(safe-area-inset-top, 12px) + 32dvh)) !important;
     padding: 0 !important;
     margin: 0 !important;
-    z-index: 10 !important;
+    z-index: 150 !important;
+    pointer-events: auto !important;
     overflow: hidden !important;
-    mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 85%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 85%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 5%, black 88%, transparent 100%) !important;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 5%, black 88%, transparent 100%) !important;
   }
 
   #SpicyLyricsPage .LyricsContainer .LyricsContent {
+    position: absolute !important;
+    display: block !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 100% !important;
+    width: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: scroll !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    container-type: normal !important;
+    pointer-events: auto !important;
+    transform: translateZ(0) !important;
+    will-change: transform, scroll-position !important;
     padding: 0 28px !important;
     text-align: left !important;
   }
 
   #SpicyLyricsPage .LyricsContainer .LyricsContent .SpicyLyricsScrollContainer {
+    container-type: normal !important;
     margin-top: 0vh !important;
-    padding-top: 40dvh !important;
-    padding-bottom: 45dvh !important;
+    padding-top: 6dvh !important;
+    padding-bottom: 25dvh !important;
   }
 
   #SpicyLyricsPage .LyricsContainer .LyricsContent .line {
@@ -1272,7 +1354,7 @@ body.is-rendering .NowBar {
     padding: 14px 0 !important;
     line-height: 1.25 !important;
     opacity: 0.28;
-    transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    transition: opacity 0.4s ease;
   }
 
   #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active {
@@ -1320,7 +1402,7 @@ body.is-rendering .NowBar {
   .quality-badge-container {
     display: flex !important;
     position: absolute !important;
-    bottom: 21.5dvh !important;
+    bottom: 24dvh !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
     z-index: 100 !important;
@@ -1329,10 +1411,15 @@ body.is-rendering .NowBar {
     width: auto !important;
   }
 
+  .quality-badge {
+    background: none !important;
+    padding: 0 !important;
+  }
+
   /* 4. Playback Controls Row */
   .NowBarControls {
     position: absolute !important;
-    bottom: 12dvh !important;
+    bottom: 15dvh !important;
     left: 0 !important;
     width: 100% !important;
     padding: 0 48px !important;
@@ -1379,7 +1466,7 @@ body.is-rendering .NowBar {
   /* 6. Bottom Bar */
   .BottomBar {
     position: absolute !important;
-    bottom: env(safe-area-inset-bottom, 8px) !important;
+    bottom: calc(5dvh + env(safe-area-inset-bottom, 8px)) !important;
     left: 0 !important;
     width: 100% !important;
     padding: 10px 24px !important;
@@ -1421,8 +1508,8 @@ body.is-rendering .NowBar {
 
   .BottomBar button img,
   .BottomBar button svg {
-    width: 24px !important;
-    height: 24px !important;
+    width: 26px !important;
+    height: 26px !important;
     opacity: 0.65 !important;
   }
 
@@ -1449,9 +1536,11 @@ body.is-rendering .NowBar {
 
   #SpicyLyricsPage .ContentBox .NowBar.centered .Header .MediaBox {
     position: absolute !important;
-    top: calc(7vh + env(safe-area-inset-top, 12px)) !important;
-    left: 36px !important;
+    top: calc(8vh + env(safe-area-inset-top, 12px)) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
     width: calc(100% - 72px) !important;
+    max-width: calc(52dvh - env(safe-area-inset-top, 12px) - 20px) !important;
     height: auto !important;
     aspect-ratio: 1 / 1 !important;
     margin-bottom: 0 !important;
@@ -1463,18 +1552,67 @@ body.is-rendering .NowBar {
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45) !important;
   }
 
-  #SpicyLyricsPage .ContentBox .NowBar.centered .Header .MetadataRow {
+  /* Unified Bottom Wrapper for centered mode */
+  #SpicyLyricsPage .ContentBox .NowBar.centered .Header .NowBarBottomWrapper {
     position: absolute !important;
-    bottom: calc(36dvh + env(safe-area-inset-bottom, 12px)) !important;
-    top: auto !important;
-    left: 36px !important;
+    bottom: calc(15dvh + env(safe-area-inset-bottom, 12px)) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
     width: calc(100% - 72px) !important;
+    max-width: calc(52dvh - env(safe-area-inset-top, 12px) - 20px) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 2.5dvh !important;
+    pointer-events: none !important;
+    padding: 0 !important;
+  }
+
+  /* Shrink vertical gaps on shorter screens without squishing width */
+  @media (max-height: 750px) {
+    #SpicyLyricsPage .ContentBox .NowBar.centered .Header .NowBarBottomWrapper {
+      bottom: calc(12dvh + env(safe-area-inset-bottom, 12px)) !important;
+      gap: 2dvh !important;
+    }
+
+    #SpicyLyricsPage .ContentBox .NowBar.centered .quality-badge-container {
+      margin-top: -1.6dvh !important;
+      margin-bottom: -0.4dvh !important;
+    }
+  }
+
+  @media (max-height: 650px) {
+    #SpicyLyricsPage .ContentBox .NowBar.centered .Header .NowBarBottomWrapper {
+      bottom: calc(9dvh + env(safe-area-inset-bottom, 12px)) !important;
+      gap: 1.5dvh !important;
+    }
+
+    #SpicyLyricsPage .ContentBox .NowBar.centered .quality-badge-container {
+      margin-top: -1.2dvh !important;
+      margin-bottom: -0.3dvh !important;
+    }
+  }
+
+  #SpicyLyricsPage .ContentBox .NowBar.centered .Header .NowBarBottomWrapper>* {
+    position: relative !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    width: 100% !important;
+    transform: none !important;
+    pointer-events: auto !important;
+  }
+
+  #SpicyLyricsPage .ContentBox .NowBar.centered .Header .MetadataRow {
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
     justify-content: space-between !important;
     height: auto !important;
-    pointer-events: auto !important;
+    padding: 0 !important;
+    order: 1 !important;
   }
 
   #SpicyLyricsPage .ContentBox .NowBar.centered .Header .Metadata {
@@ -1501,32 +1639,33 @@ body.is-rendering .NowBar {
     display: flex !important;
   }
 
-  #SpicyLyricsPage .ContentBox .NowBar.centered .NowBarProgress {
-    position: absolute !important;
-    bottom: calc(27dvh + env(safe-area-inset-bottom, 12px)) !important;
-    left: 36px !important;
-    width: calc(100% - 72px) !important;
-    z-index: 100 !important;
-    margin: 0 !important;
-    pointer-events: auto !important;
+  #SpicyLyricsPage .ContentBox .NowBar.centered .quality-badge-container {
+    display: flex !important;
+    justify-content: center !important;
+    width: 100% !important;
+    order: 3 !important;
+    height: 0 !important;
+    overflow: visible !important;
+    margin-top: -2dvh !important;
+    margin-bottom: -0.5dvh !important;
   }
 
-  #SpicyLyricsPage .ContentBox .NowBar.centered .quality-badge-container {
-    bottom: calc(23.8dvh + env(safe-area-inset-bottom, 12px)) !important;
+  #SpicyLyricsPage .ContentBox .NowBar.centered .NowBarProgress {
+    z-index: 100 !important;
+    margin: 0 !important;
+    order: 2 !important;
+    margin-top: 1.5dvh !important;
   }
 
   #SpicyLyricsPage .ContentBox .NowBar.centered .NowBarControls {
-    position: absolute !important;
-    bottom: calc(13dvh + env(safe-area-inset-bottom, 12px)) !important;
-    left: 0 !important;
-    width: 100% !important;
-    padding: 0 54px !important;
     z-index: 100 !important;
     margin: 0 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
-    pointer-events: auto !important;
+    padding: 0 18px !important;
+    order: 4 !important;
+    margin-top: 2.5dvh !important;
   }
 
   #SpicyLyricsPage .ContentBox .NowBar.centered .NowBarControls .playback-control img {
@@ -1539,6 +1678,22 @@ body.is-rendering .NowBar {
     height: 56px !important;
   }
 
+  #SpicyLyricsPage .ContentBox .NowBar.centered ~ .LyricsContainer {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+  }
+
+  #SpicyLyricsPage .ContentBox .NowBar.centered ~ .BottomBar {
+    bottom: calc(0.5dvh + env(safe-area-inset-bottom, 8px)) !important;
+  }
+
+  #SpicyLyricsPage .ContentBox .NowBar.centered~.BottomBar button img,
+  #SpicyLyricsPage .ContentBox .NowBar.centered~.BottomBar button svg {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
   /* Full-Bleed Top-Half Layout with Gradient Fade for Animated Artwork on Mobile */
   #SpicyLyricsPage .ContentBox .NowBar.centered .Header .MediaBox:has(.animated-art-video.loaded) {
     position: absolute !important;
@@ -1549,6 +1704,8 @@ body.is-rendering .NowBar {
     aspect-ratio: auto !important;
     margin: 0 !important;
     padding: 0 !important;
+    transform: none !important;
+    max-width: none !important;
     z-index: 1 !important;
   }
 

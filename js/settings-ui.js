@@ -84,8 +84,9 @@ class SettingsUI {
     this.addInput(container, "Font name / URL", "customFont", "font-input-row", !settingsManager.get("customFontEnabled"));
 
     this.addToggle(container, "Right Align Lyrics", "rightAlignLyrics");
+    this.addToggle(container, "AML Lyrics", "swipeLyrics");
 
-    this.addDropdown(container, "Meme Format", "memeFormat", ["Off", "Weeb (・`ω´・)", "Gibberish (Wenomechainsama)"]);
+    this.addDropdown(container, "Meme Format", "memeFormat", ["Off", "UPPERCASE", "lowercase", "Weeb (・`ω´・)", "Gibberish (Wenomechainsama)"]);
     this.addToggle(container, "Simple Lyrics", "simpleLyricsMode");
     this.addToggle(container, "AML Stagger Scrolling", "amlAnimation");
     this.addDropdown(container, "Release Year Position", "releaseYearPosition", ["Off", "Before Artist", "After Artist"]);
@@ -143,6 +144,10 @@ class SettingsUI {
     eqBtn.style.marginTop = "10px";
     eqBtn.onclick = () => this.showMixingBoard();
     this.addRow(container, "Equalizer", eqBtn);
+
+    this.addSlider(container, "Crossfade", "crossfadeDuration", 0, 10, 0.5, (v) => {
+      return v === 0 ? "Off" : `${v}s`;
+    });
 
     // --- Developer / Advanced ---
     this.addGroup(container, "Advanced Utilities");
@@ -270,6 +275,35 @@ class SettingsUI {
       settingsManager.set(key, input.value);
     };
     this.addRow(container, label, input, extraClass, hidden);
+  }
+
+  addSlider(container, label, key, min, max, step, formatCallback) {
+    const currentVal = settingsManager.get(key) ?? min;
+
+    const wrap = document.createElement("div");
+    wrap.className = "sl-slider-wrap";
+
+    const valueLabel = document.createElement("span");
+    valueLabel.className = "sl-slider-value";
+    valueLabel.textContent = formatCallback ? formatCallback(currentVal) : currentVal;
+
+    const slider = document.createElement("input");
+    slider.type = "range";
+    slider.className = "sl-range-slider";
+    slider.min = min;
+    slider.max = max;
+    slider.step = step;
+    slider.value = currentVal;
+
+    slider.oninput = () => {
+      const v = parseFloat(slider.value);
+      valueLabel.textContent = formatCallback ? formatCallback(v) : v;
+      settingsManager.set(key, v);
+    };
+
+    wrap.appendChild(valueLabel);
+    wrap.appendChild(slider);
+    this.addRow(container, label, wrap);
   }
 
   addDropdown(container, label, key, options) {

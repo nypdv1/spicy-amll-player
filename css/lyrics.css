@@ -37,7 +37,7 @@
   width: 100%;
   font-size: var(--DefaultLyricsSize) !important;
   font-weight: 700;
-  scrollbar-width: thin;
+  scrollbar-width: none;
   scrollbar-color: transparent transparent;
   z-index: 9;
 
@@ -70,7 +70,7 @@
 
 /* ── Scroll Container ── */
 #SpicyLyricsPage .LyricsContainer .LyricsContent .SpicyLyricsScrollContainer {
-  container-type: size !important;
+  container-type: inline-size !important;
   width: 100cqw;
   transition: padding-right 0.4s, padding-left 0.4s;
   display: flex;
@@ -202,7 +202,8 @@
   opacity: 1;
   --BlurAmount: 0px !important;
   /*margin-top: 2.5cqw !important;
-  margin-bottom: 2.5cqw !important;*/ /* disgusting */
+  margin-bottom: 2.5cqw !important;*/
+  /* disgusting */
 }
 
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.Active .word,
@@ -405,9 +406,10 @@
 
 #SpicyLyricsPage .LyricsContainer .LyricsContent .line.static {
   cursor: default;
-  --gradient-position: 100%;
-  --gradient-alpha: 1;
-  --gradient-alpha-end: 1;
+  opacity: 1 !important;
+  --gradient-alpha: 1 !important;
+  --gradient-alpha-end: 1 !important;
+  --gradient-position: 100% !important;
 }
 
 /* ═══════════════════════════════════════════════
@@ -606,8 +608,9 @@
 
   #SpicyLyricsPage .LyricsContainer .LyricsContent .SpicyLyricsScrollContainer {
     width: 100%;
-    margin-top: 10vh;
-    padding-bottom: 50vh;
+    margin-top: 0vh !important;
+    padding-top: 12dvh !important;
+    padding-bottom: 25dvh !important;
   }
 
   :root {

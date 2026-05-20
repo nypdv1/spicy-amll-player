@@ -57,7 +57,7 @@ export function setLyricsTime(currentPosition, lyricsType) {
           }
         }
 
-        if (nextLine && minGap < 3000 && currentPosition < nextLine.StartTime) {
+        if (nextLine && minGap < 300 && currentPosition < nextLine.StartTime) {
           line.Status = "Active";
         } else {
           line.Status = "Sung";

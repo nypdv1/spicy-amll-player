@@ -1034,17 +1034,32 @@ document.addEventListener('DOMContentLoaded', () => {
        `;
        }).join('');
 
-       playlistTracksGrid.querySelectorAll('.trending-card').forEach(card => {
-         card.onclick = async () => {
-           // On click play playlist starting from this index? Standard behavior is just wipe queue and play the single track.
-           const tid = parseInt(card.dataset.id);
-           const t = tracks.find(x => x.id === tid);
-           await clearQueue();
-           await addTrackToQueue(t.buffer, t);
-           setCurrentIndex(0);
-           window.location.href = 'player.html';
-         };
-       });
+        playlistTracksGrid.querySelectorAll('.trending-card').forEach(card => {
+          card.onclick = async () => {
+            const tid = parseInt(card.dataset.id);
+            const clickedIndex = tracks.findIndex(x => x.id === tid);
+            const clickedTrack = tracks[clickedIndex];
+
+            if (clickedTrack && clickedTrack.buffer) {
+              if (prepOverlay) {
+                prepOverlay.classList.add('active');
+                prepStatus.textContent = "Loading Playlist...";
+              }
+              try {
+                await clearQueue();
+                for (const t of tracks) {
+                  await addTrackToQueue(t.buffer, t);
+                }
+                setCurrentIndex(clickedIndex);
+                window.location.href = 'player.html';
+              } catch (err) {
+                console.error("Failed to load playlist:", err);
+                if (prepOverlay) prepOverlay.classList.remove('active');
+                alert("Error loading playlist: " + err.message);
+              }
+            }
+          };
+        });
      }
   }
 
@@ -1356,20 +1371,58 @@ document.addEventListener('DOMContentLoaded', () => {
      `;
      }).join('');
 
-     container.querySelectorAll('.trending-card').forEach(card => {
-       card.onclick = async () => {
-         const tid = card.dataset.id;
-         const t = tracks.find(x => (x.id || x.trackId) == tid);
-         if (t.buffer) {
-           await clearQueue();
-           await addTrackToQueue(t.buffer, t);
-           setCurrentIndex(0);
-           window.location.href = 'player.html';
-         } else {
-           loadRemoteTrack(t);
-         }
-       };
-     });
+      container.querySelectorAll('.trending-card').forEach(card => {
+        card.onclick = async () => {
+          const tid = card.dataset.id;
+          const clickedIndex = tracks.findIndex(x => (x.id || x.trackId) == tid);
+          const clickedTrack = tracks[clickedIndex];
+
+          if (clickedTrack && clickedTrack.buffer) {
+            if (prepOverlay) {
+              prepOverlay.classList.add('active');
+              prepStatus.textContent = "Loading Tracks...";
+            }
+            try {
+              await clearQueue();
+              for (const track of tracks) {
+                await addTrackToQueue(track.buffer, track);
+              }
+              setCurrentIndex(clickedIndex);
+              window.location.href = 'player.html';
+            } catch (err) {
+              console.error("Failed to load tracks:", err);
+              if (prepOverlay) prepOverlay.classList.remove('active');
+              alert("Error loading tracks: " + err.message);
+            }
+          } else if (clickedTrack) {
+            if (prepOverlay) {
+              prepOverlay.classList.add('active');
+              prepStatus.textContent = "Loading Recently Played...";
+            }
+            try {
+              await clearQueue();
+              for (const track of tracks) {
+                const metadata = {
+                  name: track.trackName || track.name,
+                  artist: track.artistName || track.artist || 'Unknown Artist',
+                  album: track.collectionName || track.album || '',
+                  artUrl: (track.artworkUrl100 || track.artUrl || '').replace('100x100', '600x600'),
+                  type: 'audio/mpeg',
+                  ttml: '__AUTO_FETCH__',
+                  amTrackId: track.trackId || track.id
+                };
+                await addTrackToQueue(null, metadata);
+              }
+              setCurrentIndex(clickedIndex);
+              window.location.href = 'player.html';
+            } catch (err) {
+              console.error("Failed to load recently played tracks:", err);
+              if (prepOverlay) prepOverlay.classList.remove('active');
+              alert("Error loading recently played: " + err.message);
+            }
+          }
+        };
+      });
   }
 
   // Tracking recent tracks

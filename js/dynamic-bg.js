@@ -81,9 +81,7 @@ function darkenColor(rgb, amount) {
  * @param {HTMLElement|string} img - The image/video element or URL
  */
 export async function applyLegacyBackground(bgContainer, img) {
-  const { default: Dybg } = await import(
-    "https://nurislamaibekuly.github.io/dybg/dybg.js"
-  );
+  const { default: Dybg } = await import('./dybg.js');
 
   stopKawarp();
 
@@ -104,8 +102,8 @@ export async function applyLegacyBackground(bgContainer, img) {
   canvas.style.width = "100%";
   canvas.style.height = "100%";
   canvas.style.filter = "brightness(0.7) saturate(0.6)";
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  canvas.width = Math.max(1, window.innerWidth);
+  canvas.height = Math.max(1, window.innerHeight);
   bgContainer.appendChild(canvas);
 
   _dybg = new Dybg(canvas);
@@ -113,16 +111,22 @@ export async function applyLegacyBackground(bgContainer, img) {
 
   const loadSource = () => {
     if (img instanceof HTMLVideoElement) {
-      _sourceCanvas.width = img.videoWidth || 512;
-      _sourceCanvas.height = img.videoHeight || 512;
-      _sourceCtx.drawImage(
-        img,
-        0,
-        0,
-        _sourceCanvas.width,
-        _sourceCanvas.height
-      );
-      _dybg.loadImage(_sourceCanvas);
+      if (img.readyState >= 2 && img.videoWidth > 0 && img.videoHeight > 0) {
+        _sourceCanvas.width = img.videoWidth;
+        _sourceCanvas.height = img.videoHeight;
+        _sourceCtx.drawImage(
+          img,
+          0,
+          0,
+          _sourceCanvas.width,
+          _sourceCanvas.height
+        );
+        _dybg.loadImage(_sourceCanvas);
+      } else {
+        _sourceCanvas.width = 512;
+        _sourceCanvas.height = 512;
+        _dybg.loadImage(_sourceCanvas);
+      }
     } else if (typeof img === 'string') {
       const imageEl = new Image();
       imageEl.crossOrigin = "anonymous";
@@ -141,15 +145,20 @@ export async function applyLegacyBackground(bgContainer, img) {
     const updateFrame = () => {
       if (!_dybg) return;
 
-      _sourceCtx.drawImage(
-        img,
-        0,
-        0,
-        _sourceCanvas.width,
-        _sourceCanvas.height
-      );
-
-      _dybg.loadImage(_sourceCanvas);
+      if (img.readyState >= 2 && img.videoWidth > 0 && img.videoHeight > 0) {
+        if (_sourceCanvas.width !== img.videoWidth || _sourceCanvas.height !== img.videoHeight) {
+          _sourceCanvas.width = img.videoWidth;
+          _sourceCanvas.height = img.videoHeight;
+        }
+        _sourceCtx.drawImage(
+          img,
+          0,
+          0,
+          _sourceCanvas.width,
+          _sourceCanvas.height
+        );
+        _dybg.loadImage(_sourceCanvas);
+      }
 
       _videoUpdateTimer = setTimeout(updateFrame, 100);
     };
@@ -158,8 +167,8 @@ export async function applyLegacyBackground(bgContainer, img) {
   }
 
   _resizeHandler = () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.width = Math.max(1, window.innerWidth);
+    canvas.height = Math.max(1, window.innerHeight);
     _dybg?.resize?.();
   };
 

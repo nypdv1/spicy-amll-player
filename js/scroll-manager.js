@@ -12,6 +12,7 @@ let lastActiveElement = null;
 let lastScrollTime = 0;
 let forceScrollQueued = false;
 let lastPosition = 0;
+let lastUserScrollTime = 0;
 
 const USER_SCROLL_COOLDOWN = 3000; // Increased to 3s for better free scrolling
 const SNAP_BACK_THRESHOLD = 5000;  // 5s before force-snapping back if away
@@ -38,8 +39,16 @@ export function initScrollManager(lyricsContent) {
 
   const markUserScroll = () => {
     userIsScrolling = true;
+    lastUserScrollTime = performance.now(); // Record user scroll interaction
     lyricsContent.classList.add('HideLineBlur');
     clearTimeout(userScrollTimeout);
+
+    // Cancel any active spring animation immediately when the user interacts
+    if (springState.rafId) {
+      cancelAnimationFrame(springState.rafId);
+      springState.rafId = null;
+    }
+
     userScrollTimeout = setTimeout(() => {
       userIsScrolling = false;
       lyricsContent.classList.remove('HideLineBlur');
@@ -48,17 +57,9 @@ export function initScrollManager(lyricsContent) {
 
   // Detect various user interactions
   lyricsContent.addEventListener('wheel', markUserScroll, { passive: true });
+  lyricsContent.addEventListener('touchstart', markUserScroll, { passive: true });
   lyricsContent.addEventListener('touchmove', markUserScroll, { passive: true });
   lyricsContent.addEventListener('mousedown', markUserScroll, { passive: true });
-
-  // Generic scroll detection (catches scrollbar drags)
-  lyricsContent._isInternalScroll = false;
-
-  lyricsContent.addEventListener('scroll', () => {
-    if (!lyricsContent._isInternalScroll) {
-      markUserScroll();
-    }
-  }, { passive: true });
 }
 
 // Spring physics state
@@ -81,7 +82,15 @@ const springState = {
 function getOffsetTopRelativeTo(element, container) {
   const elementRect = element.getBoundingClientRect();
   const containerRect = container.getBoundingClientRect();
-  return elementRect.top - containerRect.top + container.scrollTop;
+  let offset = elementRect.top - containerRect.top + container.scrollTop;
+
+  // Subtract current transform Y translation from lyrics-animator staggered springs
+  // to get the stable, untransformed layout top of the line.
+  if (element.AnimatorStoreLine && typeof element.AnimatorStoreLine.Y?.position === 'number') {
+    offset -= element.AnimatorStoreLine.Y.position;
+  }
+
+  return offset;
 }
 
 function scrollIntoCenter(container, element, instant = false) {
@@ -91,7 +100,7 @@ function scrollIntoCenter(container, element, instant = false) {
   const elementOffsetTop = getOffsetTopRelativeTo(element, container);
   const elementHeight = element.offsetHeight;
 
-  const targetScroll = elementOffsetTop - (containerHeight / 2) + (elementHeight / 2);
+  const targetScroll = elementOffsetTop - (containerHeight * 0.38) + (elementHeight / 2);
   const clampedTarget = Math.max(0, Math.min(targetScroll, container.scrollHeight - containerHeight));
 
   if (instant) {
@@ -154,7 +163,7 @@ function tickSpring(timestamp, container) {
  * Check if an element is in viewport.
  */
 function isElementInViewport(container, element) {
-  const elementTop = element.offsetTop;
+  const elementTop = getOffsetTopRelativeTo(element, container);
   const elementBottom = elementTop + element.clientHeight;
   const viewportTop = container.scrollTop;
   const viewportBottom = viewportTop + container.clientHeight;
@@ -165,9 +174,12 @@ function isElementInViewport(container, element) {
  * Scroll to the currently active line.
  */
 export function scrollToActiveLine(lyricsContent, force = false) {
+  const now = performance.now();
+
   if (forceScrollQueued || force) {
     forceScrollQueued = false;
     userIsScrolling = false;
+    lastUserScrollTime = 0; // Reset user scroll timer
     const activeLine = lyricsContent.querySelector('.line.Active:not(.bg-line)');
     if (activeLine) {
       lastActiveElement = activeLine;
@@ -176,22 +188,15 @@ export function scrollToActiveLine(lyricsContent, force = false) {
     return;
   }
 
-  if (userIsScrolling) return;
+  // If the user has scrolled manually recently, don't snap back yet
+  if (now - lastUserScrollTime < SNAP_BACK_THRESHOLD) {
+    return;
+  }
 
   const activeLine = lyricsContent.querySelector('.line.Active:not(.bg-line)');
   if (!activeLine) return;
 
-  const now = performance.now();
-  const timeSinceLastScroll = now - lastScrollTime;
-  const isInView = isElementInViewport(lyricsContent, activeLine);
-
-  // If user scrolled far away, don't snap back as long as the song is moving
-  // unless they've been idle for a long time (SNAP_BACK_THRESHOLD)
-  if (!isInView && timeSinceLastScroll < SNAP_BACK_THRESHOLD && lastActiveElement) {
-    return;
-  }
-
-  if (activeLine === lastActiveElement && isInView) return;
+  if (activeLine === lastActiveElement) return;
 
   lastActiveElement = activeLine;
   lastScrollTime = now;
@@ -201,7 +206,10 @@ export function scrollToActiveLine(lyricsContent, force = false) {
 
   if (isAfterDotLine) {
     setTimeout(() => {
-      if (!userIsScrolling) scrollIntoCenter(lyricsContent, activeLine, false);
+      // Re-verify that user hasn't scrolled during the timeout delay
+      if (performance.now() - lastUserScrollTime >= SNAP_BACK_THRESHOLD) {
+        scrollIntoCenter(lyricsContent, activeLine, false);
+      }
     }, 240);
   } else {
     scrollIntoCenter(lyricsContent, activeLine, false);
@@ -222,6 +230,7 @@ export function resetScrollManager() {
   userIsScrolling = false;
   lastActiveElement = null;
   lastScrollTime = 0;
+  lastUserScrollTime = 0;
   forceScrollQueued = false;
   clearTimeout(userScrollTimeout);
 }
